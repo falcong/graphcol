@@ -27,10 +27,10 @@ CFLAG = $(CFLAGDEBUG)
 VPATH = src:inc
 
 #File programma
-OBJECT = tabuCol.o routines.o node.o graph.o nodesList.o pnode.o pnodesList.o
+OBJECT = main.o tabuCol.o routines.o node.o graph.o nodesList.o pnode.o pnodesList.o
 SOURCES = $(INC) $(SRC)
 INC =	routines.h node.h graph.h defs.h nodesList.h pnode.h pnodesList.h
-SRC = routines.c node.c graph.c tabuCol.c nodesList.c pnode.c pnodesList.c
+SRC = main.c routines.c node.c graph.c tabuCol.c nodesList.c pnode.c pnodesList.c
 
 # ------------------------------------------------------------------------------
 
