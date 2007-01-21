@@ -146,7 +146,9 @@ Graph *loadGraph(char *instFile)
 
 }
 
-
+/**
+Function that print in a "out.dot" file the resulting graph of the computation
+*/
 void printDotOut(NodesList *l)
 {
   Node *n;
@@ -154,16 +156,40 @@ void printDotOut(NodesList *l)
   pNode *pn;
   FILE *pf;
 
-  n=firstNodesList(l);
-
   pf=fopen("out.dot","w");
-
   fprintf(pf,"strict graph G {\n");
+  
+  fprintf(pf,"ratio=1;\n");
 
+  //Print nodes
+  n=firstNodesList(l);
+  while(!endNodesList(n,l))
+  {
+    fprintf(pf,"%d [fillcolor=",n->id);
+    
+    switch(n->color)
+    {
+      case 1:  fprintf(pf,"blue");
+          break;
+      case 2:  fprintf(pf,"red");
+          break;
+      case 3:  fprintf(pf,"green");
+          break;
+      case 4:  fprintf(pf,"yellow");
+          break;
+      default:fprintf(pf,"white");
+    }
+    
+    fprintf(pf,"];\n");
+    n=nextNodesList(n);
+  }
+  
+  //Print edges
+  n=firstNodesList(l);
   while(!endNodesList(n,l))
   {
     pl = n->adj;
-    fprintf(pf,"%d [fillcolor=blue];",n->color);
+//    fprintf(pf,"%d",n->color);
 
     if(emptypNodesList(pl))
     {
@@ -182,7 +208,13 @@ void printDotOut(NodesList *l)
   }
 
   fprintf(pf,"}\n");
-  
   fclose(pf);
+}
+
+
+boolean findTabu(Graph *g, int numColors)
+{
+
+  return FALSE;
 }
 

@@ -1,6 +1,9 @@
 #include "../inc/defs.h"
 #include "../inc/routines.h"
 
+void printProcessInfo(Graph *g, int type);
+
+
 int main(int argc, char *argv[])
 {
   char instFile[LUNGHEZZA+1];
@@ -12,12 +15,21 @@ int main(int argc, char *argv[])
 
   //Caricamento dell'istanza
   g=loadGraph(instFile);
-
-//   printNodesList(g->nodesList);
-
-  printDotOut(g->nodesList);
-  system("dot out.dot -Tps > out.ps");
-  system("kghostview out.ps");
-
+  
+  printProcessInfo(g,2);
+  
   return 0;
+}
+
+void printProcessInfo(Graph *g, int type)
+{
+  switch(type)
+  {
+    case 1: printDotOut(g->nodesList);
+            system("dot out.dot -Tjpg > out.jpg");
+            break;
+    case 2: printNodesList(g->nodesList);
+            break;
+    default:break;
+  }
 }
