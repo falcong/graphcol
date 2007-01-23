@@ -30,8 +30,8 @@
 
 #define LUNGHEZZA 80
 
-#define MAXCOLORS 100
+#define MAXCOLORS 4
 
 
-
+char *getColorName(int color);
 #endif

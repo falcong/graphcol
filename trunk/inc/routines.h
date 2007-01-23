@@ -10,6 +10,7 @@ struct _onemove{
   
   int id;
   int color;
+  int bestNew;
 };
 
 
@@ -35,11 +36,15 @@ void randomColor(Graph *g, int numColors);
 
 void buildAdjacency(Graph *g,int **adjColors);
 
-void printAdjacency(int **adjColors,int numNodes,int numColors);
+void printAdjacency(int **adjColors,Graph *g,int numColors);
 
 int nodesConflicting(NodesList *nl, int **adjColors, int numColors);
 
 int adjConflicting(int node, int **adjColors, int numColors);
 
-oneMove *findBest1Move(int **adjColors,int numNodes, int numColors);
+boolean isConflicting(Graph *g, int node, int **adjColors, int color);
+
+oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move);
+
+void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors);
 #endif

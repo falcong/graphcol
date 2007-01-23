@@ -158,6 +158,7 @@ void printDotOut(NodesList *l)
   pNodesList *pl;
   pNode *pn;
   FILE *pf;
+  char *name;
 
   pf=fopen("out.dot","w");
   fprintf(pf,"strict graph G {\n");
@@ -168,22 +169,8 @@ void printDotOut(NodesList *l)
   n=firstNodesList(l);
   while(!endNodesList(n,l))
   {
-    fprintf(pf,"%d [color=",n->id);
-    
-    switch(n->color)
-    {
-      case 0:  fprintf(pf,"blue");
-          break;
-      case 1:  fprintf(pf,"red");
-          break;
-      case 2:  fprintf(pf,"green");
-          break;
-      case 3:  fprintf(pf,"yellow");
-          break;
-      default:fprintf(pf,"white");
-    }
-    
-    fprintf(pf,"];\n");
+    name=getColorName(n->color);
+    fprintf(pf,"%d [color=%s,style=filled];\n",n->id,name);
     n=nextNodesList(n);
   }
   
@@ -219,12 +206,11 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
 {
   int **tabuList;
   int **adjColors;
-  int i,j,nIt,nC;
-  
-  //
+  int i,j,nIt,nC,oldC;
+  oneMove *move;
+  Node *n;
+
   //Build tabu list & adjacency matrix
-  //
-  
   tabuList = (int **) calloc(sizeof(int *),g->numNodes);
   if(tabuList == NULL)
   {
@@ -236,6 +222,13 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
   if(adjColors == NULL)
   {
     printf("Not enough memory to allocate adjacency matrix\n");
+    exit(EXIT_MEMORY);
+  }
+  
+  move=(oneMove *) malloc(sizeof(oneMove));
+  if(move == NULL)
+  {
+    printf("Not enough memory to allocate move!\n");
     exit(EXIT_MEMORY);
   }
   
@@ -262,32 +255,45 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
       tabuList[i][j]=0;
       adjColors[i][j]=0;
     }
-  } 
-  
+  }  
   
   //   printAdjacency(adjColors,g->numNodes,numColors);
-  //
   //Build the random initial solution
-  //
   randomColor(g,numColors);
-  
-  //
+
   //Init the adjacency matrix with the solution values
-  //
   buildAdjacency(g,adjColors);
-  printAdjacency(adjColors,g->numNodes,numColors);
+  printAdjacency(adjColors,g,numColors);
   
   nIt=0;
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
   printf("%d\n",nC);
   
-  while(nC > 0 || nIt < 1000)
+  while(nC > 0 && nIt < 10)
   {
     nIt++;
-  
-    findBest1Move(adjColors,g->numNodes,numColors);
+    
+    move=findBest1Move(g,adjColors,tabuList,numColors,move);
+    
+    n=getNodeFromList(move->id,g->nodesList);
+    oldC=n->color;
+    n->color=move->bestNew;
+    
+    printf("%d(%d): %d(%d=>%d) \n",nIt,nC,move->id,move->color,move->bestNew);
+    
+//     printf("prima\n");
+//     printAdjacency(adjColors,g,numColors);
+    
+    updateAdjacency(g,adjColors,move,numColors);
+//     printf("dopo\n");
+//     printAdjacency(adjColors,g,numColors);
+
     nC=nodesConflicting(g->nodesList,adjColors,numColors);
+    
+    
   }
+  
+  printAdjacency(adjColors,g,numColors);
   
   if(nC==0)
   {
@@ -306,7 +312,7 @@ void randomColor(Graph *g, int numColors)
   
   n=firstNodesList(g->nodesList);
   
-  printf("Random coloring the edges graph\n");
+  printf("Random coloring the nodes graph\n");
   
   while(!endNodesList(n,g->nodesList))
   {
@@ -336,13 +342,32 @@ void buildAdjacency(Graph *g,int **adjColors)
   }
 }
 
-void printAdjacency(int **adjColors,int numNodes,int numColors)
+void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors)
 {
+  Node *n;
+  pNode *pn;
+  
+  n=getNodeFromList(move->id,g->nodesList);
+  
+  pn=firstpNodesList(n->adj);
+  
+  while(!endpNodesList(pn,n->adj))
+  {
+    adjColors[(pn->n->id)-1][move->color]--;
+    adjColors[(pn->n->id)-1][move->bestNew]++;
+    pn=nextpNodesList(pn);
+  }
+}
+
+void printAdjacency(int **adjColors,Graph *g,int numColors)
+{
+  Node *n;
   int i,j;
   
-  for(i=0;i<numNodes;i++)
+  for(i=0;i<g->numNodes;i++)
   {
-    printf("%d: ",i+1);
+    n=getNodeFromList(i+1,g->nodesList);
+    printf("%d(%d): ",n->id,n->color);
     for(j=0;j<numColors;j++)
     {
       printf("%d ",adjColors[i][j]);
@@ -356,6 +381,7 @@ int nodesConflicting(NodesList *nl, int **adjColors, int numColors)
   Node *n;
   int cc; //Count conflicts
   
+  cc=0;
   n=firstNodesList(nl);
 
   while(!endNodesList(n,nl))
@@ -380,28 +406,57 @@ int adjConflicting(int node, int **adjColors, int numColors)
   return cac;
 }
 
-oneMove *findBest1Move(int **adjColors,int numNodes, int numColors)
+boolean isConflicting(Graph *g, int node, int **adjColors, int color)
 {
-  oneMove *move;
-  int i,j;
+  Node *n;
   
-  move=(oneMove *) malloc(sizeof(oneMove));
-  if(move == NULL)
-  {
-    printf("Not enough memory to allocate move!\n");
-    exit(EXIT_MEMORY);
-  }
+  n=getNodeFromList(node,g->nodesList);
+
+  if(n->color == color && adjColors[n->id-1][n->color]>0)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move)
+{
+  int i,j,max;
+  oneMove currentMove;
+  
+  currentMove.id=0;
+  currentMove.color=0;
+  currentMove.bestNew=0;
   
   move->id=0;
   move->color=0;
+  move->bestNew=0;
+  max=0;
   
-  for(i=0;i<numNodes;i++)
+  for(i=0;i<g->numNodes;i++)
   {
     for(j=0;j<numColors;j++)
     {
-      if (adjColors[i][j])
+      if (isConflicting(g,i+1,adjColors,j))
+      {
+        if(adjColors[i][j]>max)
+        {
+            max=adjColors[i][j];
+        
+            currentMove.id=i+1;
+            currentMove.color=j;
+            currentMove.bestNew=(rand()%numColors);
+        
+//             if(!isTabu())
+            {
+              move->id=currentMove.id;
+              move->color=currentMove.color;
+              move->bestNew=currentMove.bestNew;
+            }
+        }
+      }
     }
   }
   
   return move;
 }
+
