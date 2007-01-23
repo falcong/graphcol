@@ -34,7 +34,7 @@ void printProcessInfo(Graph *g, int type)
   switch(type)
   {
     case 1: printDotOut(g->nodesList);
-            system("dot out.dot -Tjpg > out.jpg");
+            system("dot out.dot -Tpng > out.png");
             break;
     case 2: printNodesList(g->nodesList);
             break;
