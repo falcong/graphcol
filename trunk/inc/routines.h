@@ -40,7 +40,7 @@ void printAdjacency(int **adjColors,Graph *g,int numColors);
 
 int nodesConflicting(NodesList *nl, int **adjColors, int numColors);
 
-int adjConflicting(int node, int **adjColors, int numColors);
+int adjConflicting(Node *n, int **adjColors);
 
 boolean isConflicting(Graph *g, int node, int **adjColors, int color);
 
