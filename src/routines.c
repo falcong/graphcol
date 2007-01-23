@@ -210,52 +210,55 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
   oneMove *move;
   Node *n;
 
-  //Build tabu list & adjacency matrix
-  tabuList = (int **) calloc(sizeof(int *),g->numNodes);
-  if(tabuList == NULL)
+  //Build tabu list,adjacency matrix & 1-move 
   {
-    printf("Not enough memory to allocate tabu list\n");
-    exit(EXIT_MEMORY);
-  }
-  
-  adjColors = (int **) calloc(sizeof(int *),g->numNodes);
-  if(adjColors == NULL)
-  {
-    printf("Not enough memory to allocate adjacency matrix\n");
-    exit(EXIT_MEMORY);
-  }
-  
-  move=(oneMove *) malloc(sizeof(oneMove));
-  if(move == NULL)
-  {
-    printf("Not enough memory to allocate move!\n");
-    exit(EXIT_MEMORY);
-  }
-  
-  for(i=0;i<g->numNodes;i++)
-  {
-    tabuList[i]= (int *) calloc(sizeof(int),numColors);
-    
-    if(tabuList[i] == NULL)
+    tabuList = (int **) calloc(sizeof(int *),g->numNodes);
+    if(tabuList == NULL)
     {
       printf("Not enough memory to allocate tabu list\n");
       exit(EXIT_MEMORY);
     }
     
-    adjColors[i] = (int *) calloc(sizeof(int),numColors);
-    
-    if(adjColors[i] == NULL)
+    adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+    if(adjColors == NULL)
     {
       printf("Not enough memory to allocate adjacency matrix\n");
       exit(EXIT_MEMORY);
     }
     
-    for(j=0;j<numColors;j++)
+    move=(oneMove *) malloc(sizeof(oneMove));
+    if(move == NULL)
     {
-      tabuList[i][j]=0;
-      adjColors[i][j]=0;
+      printf("Not enough memory to allocate move!\n");
+      exit(EXIT_MEMORY);
     }
-  }  
+    
+    for(i=0;i<g->numNodes;i++)
+    {
+      tabuList[i]= (int *) calloc(sizeof(int),numColors);
+      
+      if(tabuList[i] == NULL)
+      {
+        printf("Not enough memory to allocate tabu list\n");
+        exit(EXIT_MEMORY);
+      }
+      
+      adjColors[i] = (int *) calloc(sizeof(int),numColors);
+      
+      if(adjColors[i] == NULL)
+      {
+        printf("Not enough memory to allocate adjacency matrix\n");
+        exit(EXIT_MEMORY);
+      }
+      
+      for(j=0;j<numColors;j++)
+      {
+        tabuList[i][j]=0;
+        adjColors[i][j]=0;
+      }
+    }  
+    
+  }
   
   //   printAdjacency(adjColors,g->numNodes,numColors);
   //Build the random initial solution
@@ -269,7 +272,7 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
   printf("%d\n",nC);
   
-  while(nC > 0 && nIt < 10)
+  while(nC > 0 && nIt < 1000)
   {
     nIt++;
     
@@ -279,7 +282,7 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
     oldC=n->color;
     n->color=move->bestNew;
     
-    printf("%d(%d): %d(%d=>%d) \n",nIt,nC,move->id,move->color,move->bestNew);
+    printf("It%d(conflict:%d): Node%d(%d=>%d) \n",nIt,nC,move->id,move->color,move->bestNew);
     
 //     printf("prima\n");
 //     printAdjacency(adjColors,g,numColors);
@@ -386,24 +389,20 @@ int nodesConflicting(NodesList *nl, int **adjColors, int numColors)
 
   while(!endNodesList(n,nl))
   {
-    cc+=adjConflicting(n->id,adjColors,numColors);
+    cc+=adjConflicting(n,adjColors);
     n=nextNodesList(n);
   }
   
   return cc;
 }
 
-int adjConflicting(int node, int **adjColors, int numColors)
+int adjConflicting(Node *n, int **adjColors)
 {
-  int i,cac; //Count adjacent nodes conflicts
+  int acn; //Adjacent conflicting nodes
   
-  cac=0;
-  for(i=0;i<numColors;i++)
-  {
-    cac+=adjColors[node-1][i];
-  }
-  
-  return cac;
+  acn=adjColors[n->id-1][n->color];
+
+  return acn;
 }
 
 boolean isConflicting(Graph *g, int node, int **adjColors, int color)
