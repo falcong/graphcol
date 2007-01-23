@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
   char instFile[LUNGHEZZA+1];
   Graph *g;
   int colors;
+  boolean result;
 
   //Lettura del file istanza
   readCommand(argc,argv,instFile,&colors);
@@ -16,7 +17,14 @@ int main(int argc, char *argv[])
   //Caricamento dell'istanza
   g=loadGraph(instFile);
   
-  printProcessInfo(g,2);
+  result=findTabu(g,colors,5,0.5);
+  
+  if(result)
+    printf("Find %d-coloring for the current graph\n",colors);
+  else
+    printf("Failed to find %d-coloring for the current graph\n",colors);
+  
+  printProcessInfo(g,1);
   
   return 0;
 }
