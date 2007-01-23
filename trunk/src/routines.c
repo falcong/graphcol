@@ -1,4 +1,5 @@
 #include "../inc/routines.h"
+#include <time.h>
 
 /**
 Function that read from the command line the name of the instance file
@@ -101,7 +102,7 @@ Graph *loadGraph(char *instFile)
                     exit(EXIT_WRONGINPUTFORMAT);
                   }
 #ifdef DEBUG
-//                   printf("Edge: %d %d\n",w,v);
+//                   printf("Readed Edge: %d %d\n",w,v);
 #endif
                   if(problemRead == FALSE)
                   {
@@ -122,12 +123,17 @@ Graph *loadGraph(char *instFile)
                     printf("Node %d not already Created!",v);
                     exit(EXIT_WRONGINPUTFORMAT);
                   }
-//                   printf("Edge (%d,%d)\n",nW->id,nV->id);
+//                   printf("Creating Edge (%d,%d)\n",nW->id,nV->id);
 
                   //Inserimento dell'edge sotto forma di liste di adiacenza fra i due nodi selezionati
-                  appendpNodesList(nW,nV->adj);
+                  //Verifica che non vi siano duplicati
+                  if(!nodesIsInAdjList(nW->id,nV->adj))
+                    appendpNodesList(nW,nV->adj);
+                  
+                  if(!nodesIsInAdjList(nV->id,nW->adj))
+                    appendpNodesList(nV,nW->adj);
 
-//                   printf("Edge Creato(%d,%d)\n",nW->id,nV->id);
+//                   printf("Created Edge(%d,%d)\n",nW->id,nV->id);
                   break;
 
         default:  printf("%s\n",line);
@@ -141,9 +147,6 @@ Graph *loadGraph(char *instFile)
   fclose(finst);
 
   return g;
-
-
-
 }
 
 /**
@@ -165,17 +168,17 @@ void printDotOut(NodesList *l)
   n=firstNodesList(l);
   while(!endNodesList(n,l))
   {
-    fprintf(pf,"%d [fillcolor=",n->id);
+    fprintf(pf,"%d [color=",n->id);
     
     switch(n->color)
     {
-      case 1:  fprintf(pf,"blue");
+      case 0:  fprintf(pf,"blue");
           break;
-      case 2:  fprintf(pf,"red");
+      case 1:  fprintf(pf,"red");
           break;
-      case 3:  fprintf(pf,"green");
+      case 2:  fprintf(pf,"green");
           break;
-      case 4:  fprintf(pf,"yellow");
+      case 3:  fprintf(pf,"yellow");
           break;
       default:fprintf(pf,"white");
     }
@@ -212,9 +215,193 @@ void printDotOut(NodesList *l)
 }
 
 
-boolean findTabu(Graph *g, int numColors)
+boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
 {
-
-  return FALSE;
+  int **tabuList;
+  int **adjColors;
+  int i,j,nIt,nC;
+  
+  //
+  //Build tabu list & adjacency matrix
+  //
+  
+  tabuList = (int **) calloc(sizeof(int *),g->numNodes);
+  if(tabuList == NULL)
+  {
+    printf("Not enough memory to allocate tabu list\n");
+    exit(EXIT_MEMORY);
+  }
+  
+  adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+  if(adjColors == NULL)
+  {
+    printf("Not enough memory to allocate adjacency matrix\n");
+    exit(EXIT_MEMORY);
+  }
+  
+  for(i=0;i<g->numNodes;i++)
+  {
+    tabuList[i]= (int *) calloc(sizeof(int),numColors);
+    
+    if(tabuList[i] == NULL)
+    {
+      printf("Not enough memory to allocate tabu list\n");
+      exit(EXIT_MEMORY);
+    }
+    
+    adjColors[i] = (int *) calloc(sizeof(int),numColors);
+    
+    if(adjColors[i] == NULL)
+    {
+      printf("Not enough memory to allocate adjacency matrix\n");
+      exit(EXIT_MEMORY);
+    }
+    
+    for(j=0;j<numColors;j++)
+    {
+      tabuList[i][j]=0;
+      adjColors[i][j]=0;
+    }
+  } 
+  
+  
+  //   printAdjacency(adjColors,g->numNodes,numColors);
+  //
+  //Build the random initial solution
+  //
+  randomColor(g,numColors);
+  
+  //
+  //Init the adjacency matrix with the solution values
+  //
+  buildAdjacency(g,adjColors);
+  printAdjacency(adjColors,g->numNodes,numColors);
+  
+  nIt=0;
+  nC=nodesConflicting(g->nodesList,adjColors,numColors);
+  printf("%d\n",nC);
+  
+  while(nC > 0 || nIt < 1000)
+  {
+    nIt++;
+  
+    findBest1Move(adjColors,g->numNodes,numColors);
+    nC=nodesConflicting(g->nodesList,adjColors,numColors);
+  }
+  
+  if(nC==0)
+  {
+    return TRUE;
+  }
+  else
+  {
+    return FALSE;
+  }
 }
 
+void randomColor(Graph *g, int numColors)
+{
+  Node *n;
+  srand((unsigned int) time(NULL));
+  
+  n=firstNodesList(g->nodesList);
+  
+  printf("Random coloring the edges graph\n");
+  
+  while(!endNodesList(n,g->nodesList))
+  {
+    n->color=(rand()%numColors);
+//     printf("%d<=(%d)\n",n->id,n->color);
+    n=nextNodesList(n);
+  }
+}
+
+void buildAdjacency(Graph *g,int **adjColors)
+{
+  Node *n;
+  pNode *pn;
+  
+  n=firstNodesList(g->nodesList);
+  
+  while(!endNodesList(n,g->nodesList))
+  {
+    pn=firstpNodesList(n->adj);
+    
+    while(!endpNodesList(pn,n->adj))
+    {
+      adjColors[n->id-1][pn->n->color]++;
+      pn=nextpNodesList(pn);
+    } 
+    n=nextNodesList(n);
+  }
+}
+
+void printAdjacency(int **adjColors,int numNodes,int numColors)
+{
+  int i,j;
+  
+  for(i=0;i<numNodes;i++)
+  {
+    printf("%d: ",i+1);
+    for(j=0;j<numColors;j++)
+    {
+      printf("%d ",adjColors[i][j]);
+    }
+    printf("\n");
+  }
+}
+
+int nodesConflicting(NodesList *nl, int **adjColors, int numColors)
+{
+  Node *n;
+  int cc; //Count conflicts
+  
+  n=firstNodesList(nl);
+
+  while(!endNodesList(n,nl))
+  {
+    cc+=adjConflicting(n->id,adjColors,numColors);
+    n=nextNodesList(n);
+  }
+  
+  return cc;
+}
+
+int adjConflicting(int node, int **adjColors, int numColors)
+{
+  int i,cac; //Count adjacent nodes conflicts
+  
+  cac=0;
+  for(i=0;i<numColors;i++)
+  {
+    cac+=adjColors[node-1][i];
+  }
+  
+  return cac;
+}
+
+oneMove *findBest1Move(int **adjColors,int numNodes, int numColors)
+{
+  oneMove *move;
+  int i,j;
+  
+  move=(oneMove *) malloc(sizeof(oneMove));
+  if(move == NULL)
+  {
+    printf("Not enough memory to allocate move!\n");
+    exit(EXIT_MEMORY);
+  }
+  
+  move->id=0;
+  move->color=0;
+  
+  for(i=0;i<numNodes;i++)
+  {
+    for(j=0;j<numColors;j++)
+    {
+      if (adjColors[i][j])
+    }
+  }
+  
+  return move;
+}

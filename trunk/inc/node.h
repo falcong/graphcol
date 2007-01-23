@@ -22,4 +22,6 @@ struct _node{
 
 Node *createNode(int id);
 
+boolean nodesIsInAdjList(int id,pNodesList *pl);
+
 #endif
