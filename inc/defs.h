@@ -32,6 +32,7 @@
 
 #define MAXCOLORS 4
 
+#define DEFAULTVERB 0
 
 char *getColorName(int color);
 #endif
