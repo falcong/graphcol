@@ -17,7 +17,7 @@ struct _onemove{
 /**
 Function that read from the command line the name of the instance file
  */
-void readCommand(int argc,char *argv[],char *instFile, int *colors);
+void readCommand(int argc,char *argv[],char *instFile, int *colors, int *verbosity);
 
 /**
 Function that read the information stored on the instance file in DIMACS format for load the coloring graph
@@ -42,9 +42,17 @@ int nodesConflicting(NodesList *nl, int **adjColors, int numColors);
 
 int adjConflicting(Node *n, int **adjColors);
 
-boolean isConflicting(Graph *g, int node, int **adjColors, int color);
+boolean isConflicting(Graph *g, int id, int **adjColors);
 
-oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move);
+oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
 
 void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors);
+
+void updateAdjacencyTabu(Graph *g, int **adjColors, int id, int color, int newColor, int numColors);
+
+int moveProfit(int **adjColors, Node *n, int newColor, int numColors);
+
+boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors);
+
+void setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
 #endif

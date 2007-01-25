@@ -4,13 +4,13 @@
 /**
 Function that read from the command line the name of the instance file
 */
-void readCommand(int argc,char *argv[],char *instFile, int *pcolors)
+void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbosity)
 {
-  int colors;
-  if(argc != 2 && argc != 3)
+  int colors,verb;
+  if(argc != 2 && argc != 3 && argc != 4)
   {
     printf("Wrong command line!\n");
-    printf("Use %s instance_file\n",argv[0]);
+    printf("Use %s instance_file [colors][v0|v1|v2]\n",argv[0]);
     exit(EXIT_WRONGCOMMANDLINE);
   }
 
@@ -19,6 +19,16 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors)
   if(argc > 2)
   {
     colors=atoi(argv[2]);
+    
+    if(argc > 3)
+    {
+      if(sscanf(argv[3],"v%d",&verb)!=1)
+        verb=DEFAULTVERB;
+    }
+    else
+    {
+      verb=DEFAULTVERB;
+    }
   }
   else
   {
@@ -26,6 +36,7 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors)
   }
 
   *pcolors = colors;
+  *verbosity = verb;
 
 #ifdef DEBUG
   printf("instance file: %s\n",instFile);
@@ -163,7 +174,7 @@ void printDotOut(NodesList *l)
   pf=fopen("out.dot","w");
   fprintf(pf,"strict graph G {\n");
   
-  fprintf(pf,"ratio=1;\n");
+  fprintf(pf,"ratio=compress;\n");
 
   //Print nodes
   n=firstNodesList(l);
@@ -270,33 +281,28 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong)
   
   nIt=0;
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
-  printf("%d\n",nC);
+  printf("Number of conflicting edges:%d\n",nC);
   
-  while(nC > 0 && nIt < 1000)
+  while(nC > 0 && nIt < 10000)
   {
     nIt++;
     
-    move=findBest1Move(g,adjColors,tabuList,numColors,move);
+    move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt);
     
     n=getNodeFromList(move->id,g->nodesList);
     oldC=n->color;
     n->color=move->bestNew;
-    
-    printf("It%d(conflict:%d): Node%d(%d=>%d) \n",nIt,nC,move->id,move->color,move->bestNew);
-    
-//     printf("prima\n");
-//     printAdjacency(adjColors,g,numColors);
-    
+
+//     printf("It%d(conflict:%d): Node%d(%d=>%d) \n",nIt,nC,move->id,move->color,move->bestNew);
+    setTabu(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt);
     updateAdjacency(g,adjColors,move,numColors);
-//     printf("dopo\n");
 //     printAdjacency(adjColors,g,numColors);
 
     nC=nodesConflicting(g->nodesList,adjColors,numColors);
-    
-    
+  
   }
   
-  printAdjacency(adjColors,g,numColors);
+//   printAdjacency(adjColors,g,numColors);
   
   if(nC==0)
   {
@@ -362,6 +368,23 @@ void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors)
   }
 }
 
+void updateAdjacencyTabu(Graph *g, int **adjColors, int id, int color, int newColor, int numColors)
+{
+  Node *n;
+  pNode *pn;
+  
+  n=getNodeFromList(id,g->nodesList);
+  
+  pn=firstpNodesList(n->adj);
+  
+  while(!endpNodesList(pn,n->adj))
+  {
+    adjColors[(pn->n->id)-1][color]--;
+    adjColors[(pn->n->id)-1][newColor]++;
+    pn=nextpNodesList(pn);
+  }
+}
+
 void printAdjacency(int **adjColors,Graph *g,int numColors)
 {
   Node *n;
@@ -405,57 +428,142 @@ int adjConflicting(Node *n, int **adjColors)
   return acn;
 }
 
-boolean isConflicting(Graph *g, int node, int **adjColors, int color)
+boolean isConflicting(Graph *g, int id, int **adjColors)
 {
   Node *n;
   
-  n=getNodeFromList(node,g->nodesList);
+  n=getNodeFromList(id,g->nodesList);
 
-  if(n->color == color && adjColors[n->id-1][n->color]>0)
+  if(adjColors[n->id-1][n->color]>0)
     return TRUE;
   else
     return FALSE;
 }
 
-oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move)
+oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt)
 {
-  int i,j,max;
-  oneMove currentMove;
+  int i,best,profit;
+  oneMove bestMove;
+  Node *n;
   
-  currentMove.id=0;
-  currentMove.color=0;
-  currentMove.bestNew=0;
+  best=+1000;
+  bestMove.id=0;
+  bestMove.color=0;
+  bestMove.bestNew=0;
   
   move->id=0;
   move->color=0;
   move->bestNew=0;
-  max=0;
+
+  n=firstNodesList(g->nodesList);
   
-  for(i=0;i<g->numNodes;i++)
+  while(!endNodesList(n,g->nodesList))
   {
-    for(j=0;j<numColors;j++)
+//     printf("%d ",n->id);
+    if(isConflicting(g,n->id,adjColors))
     {
-      if (isConflicting(g,i+1,adjColors,j))
+//       printf("%d ",n->id);
+      for(i=0;i<numColors;i++)
       {
-        if(adjColors[i][j]>max)
+        if(i!=n->color)
         {
-            max=adjColors[i][j];
-        
-            currentMove.id=i+1;
-            currentMove.color=j;
-            currentMove.bestNew=(rand()%numColors);
-        
-//             if(!isTabu())
+          if(!isTabu(g,adjColors,n->id,i,tabuList,nIt,numColors))
+          {
+            if((profit=moveProfit(adjColors,n,i,numColors))<best)
             {
-              move->id=currentMove.id;
-              move->color=currentMove.color;
-              move->bestNew=currentMove.bestNew;
+  //             printf("%d(%d=>%d):%d\n",n->id,n->color,i,profit);
+              best=profit;
+              bestMove.id=n->id;
+              bestMove.color=n->color;
+              bestMove.bestNew=i;
             }
+          }
         }
       }
     }
+    n=nextNodesList(n);
   }
   
+  move->id=bestMove.id;
+  move->color=bestMove.color;
+  move->bestNew=bestMove.bestNew;
+  
   return move;
+}
+
+int moveProfit(int **adjColors, Node *n, int newColor, int numColors)
+{
+  int profit;
+  
+  profit=-adjColors[n->id-1][n->color];
+//   printf("profit[%d(%d)]=%d\n",n->id,n->color,profit);
+  
+  profit+=adjColors[n->id-1][newColor];
+//   printf("profit[%d(%d)]= +%d\n",n->id,n->color,adjColors[n->id-1][newColor]);
+  
+  return profit;
+}
+
+boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors)
+{
+  int tempColor,nC;
+  Node *n;
+  
+  if(tabuList[id-1][color] != 0)
+  {
+    if(nIt>tabuList[id-1][color])
+    {
+      // Tabu expired
+      return FALSE;
+    }
+    else
+    {
+      // Tabu enable
+      
+      //thrown tabu tenure
+      {
+        n=getNodeFromList(id,g->nodesList);
+        tempColor=n->color;
+        
+//         printf("Check tabu tenure (%d=>%d ?): ",tempColor,color);
+        
+        n->color=color;
+        updateAdjacencyTabu(g,adjColors,id,tempColor,color,numColors);
+        
+        if((nC=nodesConflicting(g->nodesList,adjColors,numColors))==0)
+        {
+          n->color=tempColor;
+          updateAdjacencyTabu(g,adjColors,id,color,tempColor,numColors);
+          printf("Activated tabu tenure clause:(node %d: %d=>%d)->conflict:%d!\n",id,color,n->color,nC);
+          return FALSE;
+        }
+        else
+        {
+          n->color=tempColor;
+          updateAdjacencyTabu(g,adjColors,id,color,tempColor,numColors);
+//           printf("Not Find (c:%d), roll back (%d=>%d)!\n",nC,color,n->color);
+          return TRUE; 
+        }
+        
+      
+      }
+      
+//       printf("tabu(it%d):id%d(%d)=tabu since %d\n",nIt,id,color,tabuList[id-1][color]);
+      return TRUE;
+    }
+  }
+  else
+  { //NEVER done
+    return FALSE;
+  }
+}
+
+void setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt)
+{
+  int propValue;
+  
+  propValue = floor(propLong*(nodesConflicting(g->nodesList,adjColors,numColors)));
+  tabuList[move->id-1][move->bestNew]=nIt+fixLong+propValue;
+//   printf("SetT(%d,%d)=%d+%d+%d=%d\n",move->id,move->bestNew,nIt,fixLong,propValue,tabuList[move->id-1][move->bestNew]);
 }
 

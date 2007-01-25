@@ -40,7 +40,7 @@ default: cleanbin $(NAMEPROG) clean
 
 $(NAMEPROG): $(OBJECT)
 	@echo Link oggetto: $^
-	gcc $(CFLAG) -o $(NAMEPROG) $^
+	gcc $(CFLAG) $(CFLAGOBJ) -o $(NAMEPROG) $^
 	@echo
 
 $(OBJECT): $(SOURCES)
