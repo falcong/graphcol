@@ -19,6 +19,10 @@ Function that read from the command line the name of the instance file
  */
 void readCommand(int argc,char *argv[],char *instFile, int *colors, int *verbosity);
 
+void readConfFile(int *maxIt,int *fixLong,float *propLong);
+
+
+
 /**
 Function that read the information stored on the instance file in DIMACS format for load the coloring graph
  */
@@ -30,7 +34,7 @@ Function that print in a "out.dot" file the resulting graph of the computation
 void printDotOut(NodesList *l);
 
 
-boolean findTabu(Graph *g, int numColors, int fixLong, float propLong);
+boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt);
 
 void randomColor(Graph *g, int numColors);
 
@@ -54,5 +58,5 @@ int moveProfit(int **adjColors, Node *n, int newColor, int numColors);
 
 boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors);
 
-void setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
+int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
 #endif

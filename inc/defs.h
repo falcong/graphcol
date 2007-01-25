@@ -16,6 +16,7 @@
   #define EXIT_OPENFILE         	3	///< Error while opening a file
   #define EXIT_WRONGINPUTFORMAT 	4	///< Incorrect format in an input file
   #define EXIT_INCONSISTENCY    	5	///< Inconsistency in the data structures
+  #define EXIT_WRONGCONF          6 ///< Incorrect configuration file
 #endif
 
 #ifndef _boolean
@@ -30,9 +31,11 @@
 
 #define LUNGHEZZA 80
 
-#define MAXCOLORS 4
+#define MAXCOLORS 50
 
 #define DEFAULTVERB 0
+
+#define CONF_FILE "col.conf"
 
 char *getColorName(int color);
 #endif
