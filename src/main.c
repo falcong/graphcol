@@ -11,10 +11,10 @@ int main(int argc, char *argv[])
   int colors,verbosity;
   boolean result;
 
-  //Lettura del file istanza
+  //Reading instance file
   readCommand(argc,argv,instFile,&colors,&verbosity);
 
-  //Caricamento dell'istanza
+  //Loading instance file & building graph struct
   g=loadGraph(instFile);
   
   result=findTabu(g,colors,g->numNodes/2,0.5);
