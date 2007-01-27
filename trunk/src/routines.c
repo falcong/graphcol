@@ -343,6 +343,12 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
     
     move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt);
     
+    if(move->id==-1)
+    {
+      printf("It%d\t(conf:%d):\tNo available moves!\tSkip to next iteration!\n",nIt,nC);
+      continue;
+    }
+    
     n=getNodeFromList(move->id,g->nodesList);
     oldC=n->color;
     n->color=move->bestNew;

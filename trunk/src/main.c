@@ -1,7 +1,7 @@
 #include "../inc/defs.h"
 #include "../inc/routines.h"
 
-void printProcessInfo(Graph *g, int type);
+void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime);
 
 
 int main(int argc, char *argv[])
@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
   int fixLong,maxIt;
   float propLong;
   boolean result;
+  int startTime,stopTime,execTime;
 
   //Reading instance file
   readCommand(argc,argv,instFile,&colors,&verbosity);
@@ -30,7 +31,14 @@ int main(int argc, char *argv[])
   //Build the random initial solution
   randomColor(g,colors);
   
+  
+  startTime=time(NULL);
+  
   result=findTabu(g,colors,fixLong,propLong,maxIt);
+  
+  stopTime=time(NULL);
+  
+  execTime=stopTime-startTime;
   
   if(result==0)
     printf("Find %d-coloring for the current graph\n",colors);
@@ -40,13 +48,30 @@ int main(int argc, char *argv[])
     printf("Remaining %d conflicting nodes\n\n",result);
   }
   
-  printProcessInfo(g,verbosity);
+  printProcessInfo(g,verbosity,result,instFile,colors,execTime);
   
   return 0;
 }
 
-void printProcessInfo(Graph *g, int type)
+void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime)
 {
+  
+  FILE *fResults;
+  
+  fResults=fopen("results.txt","a");
+  
+  fprintf(fResults,"\n%s\t(%d,%d)\t%d\t",instFile,g->numNodes,g->numEdges,colors);
+  
+  if(result==0)
+    fprintf(fResults,"COLORED(C:%d)\t",result);
+  else
+    fprintf(fResults,"FAILED(C:%d)\t",result);
+  
+  fprintf(fResults,"%dsec\t",execTime);
+  
+  
+  fclose(fResults);
+  
   switch(type)
   {
     case 0: 
