@@ -32,7 +32,7 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbos
   }
   else
   {
-    colors=MAXCOLORS;
+    colors=-1;
   }
 
   *pcolors = colors;
@@ -197,10 +197,16 @@ Graph *loadGraph(char *instFile)
                   //Inserimento dell'edge sotto forma di liste di adiacenza fra i due nodi selezionati
                   //Verifica che non vi siano duplicati
                   if(!nodesIsInAdjList(nW->id,nV->adj))
+									{
                     appendpNodesList(nW,nV->adj);
+										nV->numAdj++;
+									}
                   
                   if(!nodesIsInAdjList(nV->id,nW->adj))
+									{
                     appendpNodesList(nV,nW->adj);
+										nW->numAdj++;
+									}
 
 //                   printf("Created Edge(%d,%d)\n",nW->id,nV->id);
                   break;
@@ -331,7 +337,7 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   
   //Init the adjacency matrix with the solution values
   buildAdjacency(g,adjColors);
-  printAdjacency(adjColors,g,numColors);
+//   printAdjacency(adjColors,g,numColors);
   
   nIt=0;
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
@@ -355,16 +361,9 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
 
     tabuT=setTabu(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt);
     updateAdjacency(g,adjColors,move,numColors);
-//     printAdjacency(adjColors,g,numColors);
 
     nC=nodesConflicting(g->nodesList,adjColors,numColors);
-    
-    if(nC==1)
-    {
-      printAdjacency(adjColors,g,numColors);
-      exit(0);
-    }
-    
+		
     printf("It%d\t(conf:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,nC,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
@@ -637,5 +636,96 @@ int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *mo
   tabuList[move->id-1][move->bestNew]=nIt+fixLong+propValue;
 //   printf("SetT(%d,%d)=%d+%d+%d=%d\n",move->id,move->bestNew,nIt,fixLong,propValue,tabuList[move->id-1][move->bestNew]);
   return tabuList[move->id-1][move->bestNew];
+}
+
+int greedyColor(Graph *g)
+{
+	int i,id,iMax,minColor;
+	boolean colored;
+	pNode *orderNode;
+	Node *n;
+	
+	orderNode=(pNode *)calloc(g->numNodes,sizeof(pNode));
+	if(orderNode==NULL)
+	{
+		printf("Not enough memory to allocate greedy list\n");
+		exit(EXIT_MEMORY);	
+	}
+	
+	n=firstNodesList(g->nodesList);
+	
+	while(!endNodesList(n,g->nodesList))
+	{	
+		orderNode[n->id-1].n=n;
+// 		printf("Greedy n %d: %dadj\n",orderNode[n->id-1].n->id,orderNode[n->id-1].n->numAdj);
+		n=nextNodesList(n);
+	}
+	
+	iMax=0;
+	for(i=0;i<g->numNodes;i++)
+	{
+		id=getGreedyMaxOrder(g,orderNode);
+// 		printf("Max:%d\n",id);
+		colored=FALSE;
+		minColor=0;
+		
+		while(!colored)
+		{
+			if(colorAdjFree(orderNode[id-1].n,minColor))
+			{
+				orderNode[id-1].n->color=minColor;
+				colored= TRUE;
+			}
+			else
+			{
+				minColor++;
+			}
+		}
+		
+		if(minColor>iMax)
+			iMax=minColor;
+	}
+		
+	return iMax+1;
+}
+
+int getGreedyMaxOrder(Graph *g,pNode *orderNode)
+{
+	int i,ordMax,idOrdMax;
+	
+	ordMax=0;
+	idOrdMax=0;
+	
+	for(i=0;i<g->numNodes;i++)
+	{
+		if(orderNode[i].n->color ==-1)
+		{
+			if(orderNode[i].n->numAdj > ordMax)
+			{
+// 				printf("Node %d\n",orderNode[i].n->id);
+				ordMax=orderNode[i].n->numAdj;
+				idOrdMax=i+1;
+			}
+		
+		}
+	}
+	
+	return idOrdMax;
+}
+
+boolean colorAdjFree(Node *n,int color)
+{
+	pNode *pn;
+	
+	pn=firstpNodesList(n->adj);
+
+	while(!endpNodesList(pn,n->adj))
+	{
+		if(pn->n->color == color)
+			return FALSE;
+		pn=nextpNodesList(pn);
+	}
+
+	return TRUE;
 }
 

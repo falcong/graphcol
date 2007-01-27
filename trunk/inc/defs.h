@@ -32,7 +32,7 @@
 
 #define LUNGHEZZA 80
 
-#define MAXCOLORS 50
+#define MAXCOLORS 5000
 
 #define DEFAULTVERB 0
 

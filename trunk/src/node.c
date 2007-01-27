@@ -15,6 +15,7 @@ Node *createNode(int id)
   node->next = NULL;
   node->prev = NULL;
   node->adj = (pNodesList *) createpNodesList();
+	node->numAdj= 0;
 
   return node;
 }
