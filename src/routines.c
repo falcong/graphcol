@@ -662,7 +662,7 @@ int greedyColor(Graph *g)
 	while(!endNodesList(n,g->nodesList))
 	{	
 		orderNode[n->id-1].n=n;
-// 		printf("Greedy n %d: %dadj\n",orderNode[n->id-1].n->id,orderNode[n->id-1].n->numAdj);
+		printf("Greedy n %d: %dadj\n",orderNode[n->id-1].n->id,orderNode[n->id-1].n->numAdj);
 		n=nextNodesList(n);
 	}
 	
@@ -670,7 +670,7 @@ int greedyColor(Graph *g)
 	for(i=0;i<g->numNodes;i++)
 	{
 		id=getGreedyMaxOrder(g,orderNode);
-// 		printf("Max:%d\n",id);
+		printf("Max:%d\n",id);
 		colored=FALSE;
 		minColor=0;
 		
@@ -699,7 +699,7 @@ int getGreedyMaxOrder(Graph *g,pNode *orderNode)
 	int i,ordMax,idOrdMax;
 	
 	ordMax=0;
-	idOrdMax=0;
+	idOrdMax=1;
 	
 	for(i=0;i<g->numNodes;i++)
 	{
@@ -707,7 +707,7 @@ int getGreedyMaxOrder(Graph *g,pNode *orderNode)
 		{
 			if(orderNode[i].n->numAdj > ordMax)
 			{
-// 				printf("Node %d\n",orderNode[i].n->id);
+				printf("Node %d\n",orderNode[i].n->id);
 				ordMax=orderNode[i].n->numAdj;
 				idOrdMax=i+1;
 			}

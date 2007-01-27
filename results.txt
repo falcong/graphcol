@@ -2,3 +2,7 @@ INSTANCE	NODE,EDGES	COLORS	RESULT(CONFLICT))	EXECTIME	MAXIT	FIXLONG	PROPLONG
 
 instances/myciel3.col	(11,20)	4	COLORED(C:0)	0sec	5000it	80fix	0.80prop
 instances/DSJC1000.5.col	(1000,499652)	121	COLORED(C:0)	11sec	5000it	20fix	0.80prop
+instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	5000it	20fix	0.80prop
+instances/homer.col	(561,3258)	14	COLORED(C:0)	1sec	5000it	20fix	0.80prop
+instances/homer.col	(561,3258)	13	COLORED(C:0)	1sec	5000it	20fix	0.80prop
+instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	5000it	20fix	0.80prop

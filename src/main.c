@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 {
   char instFile[LUNGHEZZA+1];
   Graph *g;
-  int colors,verbosity,colorsGreedy;
+  int colors,verbosity;
   int fixLong,maxIt;
   float propLong;
   boolean result;
