@@ -1,14 +1,14 @@
 #include "../inc/defs.h"
 #include "../inc/routines.h"
 
-void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime);
+void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong);
 
 
 int main(int argc, char *argv[])
 {
   char instFile[LUNGHEZZA+1];
   Graph *g;
-  int colors,verbosity;
+  int colors,verbosity,colorsGreedy;
   int fixLong,maxIt;
   float propLong;
   boolean result;
@@ -16,28 +16,26 @@ int main(int argc, char *argv[])
 
   //Reading instance file
   readCommand(argc,argv,instFile,&colors,&verbosity);
-  
   //Loading instance file & building graph struct
   g=loadGraph(instFile);
-  
   //Set default tabu search values
   maxIt=1000;
   fixLong=g->numNodes/2;
   propLong=0.5;
-  
   //Reading configuration file
   readConfFile(&maxIt,&fixLong,&propLong);
-  
+	
+	if(colors==-1)
+		colors=greedyColor(g);
+	
+	printf("GreedyCol:%d\n",colorsGreedy);
+	
   //Build the random initial solution
   randomColor(g,colors);
   
-  
   startTime=time(NULL);
-  
   result=findTabu(g,colors,fixLong,propLong,maxIt);
-  
   stopTime=time(NULL);
-  
   execTime=stopTime-startTime;
   
   if(result==0)
@@ -48,12 +46,12 @@ int main(int argc, char *argv[])
     printf("Remaining %d conflicting nodes\n\n",result);
   }
   
-  printProcessInfo(g,verbosity,result,instFile,colors,execTime);
+  printProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong);
   
   return 0;
 }
 
-void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime)
+void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong)
 {
   
   FILE *fResults;
@@ -67,7 +65,7 @@ void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors
   else
     fprintf(fResults,"FAILED(C:%d)\t",result);
   
-  fprintf(fResults,"%dsec\t",execTime);
+  fprintf(fResults,"%dsec\t%dit\t%dfix\t%.2fprop",execTime,maxIt,fixLong,propLong);
   
   
   fclose(fResults);

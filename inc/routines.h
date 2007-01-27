@@ -59,4 +59,10 @@ int moveProfit(int **adjColors, Node *n, int newColor, int numColors);
 boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors);
 
 int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
+
+int greedyColor(Graph *g);
+
+int getGreedyMaxOrder(Graph *g,pNode *orderNode);
+
+boolean colorAdjFree(Node *n,int color);
 #endif

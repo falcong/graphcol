@@ -18,6 +18,7 @@ struct _node{
   Node *next;///Pointer to the next     node in the node's list
 
   pNodesList *adj;///Pointer to the adjacency list of the node
+	int numAdj;
 };
 
 Node *createNode(int id);
