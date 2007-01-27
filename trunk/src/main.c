@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	if(colors==-1)
 		colors=greedyColor(g);
 	
-	printf("GreedyCol:%d\n",colorsGreedy);
+	printf("Greedy Colors:%d\n",colors);
 	
   //Build the random initial solution
   randomColor(g,colors);

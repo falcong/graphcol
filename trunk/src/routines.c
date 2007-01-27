@@ -18,7 +18,12 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbos
 
   if(argc > 2)
   {
-    colors=atoi(argv[2]);
+		if(sscanf(argv[2],"%d",&colors)!=1)
+		{
+			colors=-1;
+			if(sscanf(argv[2],"v%d",&verb)!=1)
+				verb=DEFAULTVERB;
+		}
     
     if(argc > 3)
     {
