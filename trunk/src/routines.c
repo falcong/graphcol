@@ -16,22 +16,30 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbos
 
   strcpy(instFile,argv[1]);
 
-  if(argc > 2)
+  if(argc == 3)
   {
 		if(sscanf(argv[2],"%d",&colors)!=1)
 		{
 			colors=-1;
-			if(sscanf(argv[2],"v%d",&verb)!=1)
-				verb=DEFAULTVERB;
 		}
-    
-    if(argc > 3)
-    {
-      if(sscanf(argv[3],"v%d",&verb)!=1)
-        verb=DEFAULTVERB;
-    }
-    else
-    {
+		
+		if(sscanf(argv[2],"v%d",&verb)!=1)
+		{
+			verb=DEFAULTVERB;
+		}
+		
+	}
+	else if(argc > 3)
+	{
+		if(sscanf(argv[2],"%d",&colors)!=1)
+		{
+			printf("Wrong command line!\n");
+			printf("Use %s instance_file [colors][v0|v1|v2]\n",argv[0]);
+			exit(EXIT_WRONGCOMMANDLINE);
+		}
+		
+    if(sscanf(argv[3],"v%d",&verb)!=1)
+		{
       verb=DEFAULTVERB;
     }
   }
@@ -520,6 +528,7 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
   
   n=firstNodesList(g->nodesList);
   
+	//Finding best move
   while(!endNodesList(n,g->nodesList))
   {
 //     printf("%d ",n->id);
@@ -547,6 +556,38 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
     }
     n=nextNodesList(n);
   }
+	
+	//Find best color for random move
+// 	while(!chosen)
+// 	{
+// 		bestMove.id = (rand()%g->numNodes)+1;
+// 		while(!isConflicting(g,bestMove.id,adjColors))
+// 		{
+// // 			printf("id:%d\n",bestMove.id);
+// 			bestMove.id = (rand()%g->numNodes)+1;
+// 		}
+// 		
+// // 		printf("id:%d\n",bestMove.id);
+// 		
+// 		for(i=0;i<numColors;i++)
+// 		{
+// 			if(!isTabu(g,adjColors,bestMove.id,i,tabuList,nIt,numColors))
+// 			{
+// 				n=getNodeFromList(bestMove.id,g->nodesList);
+// 				
+// 				if((profit=moveProfit(adjColors,n,i,numColors))<best)
+// 				{
+// 					chosen=TRUE;
+// 					best=profit;
+// 					bestMove.id=n->id;
+// 					bestMove.color=n->color;
+// 					bestMove.bestNew=i;
+// 				}
+// 			}
+// 		}
+// 	}
+	
+	
   
   if(chosen==TRUE)
   {
@@ -662,7 +703,7 @@ int greedyColor(Graph *g)
 	while(!endNodesList(n,g->nodesList))
 	{	
 		orderNode[n->id-1].n=n;
-		printf("Greedy n %d: %dadj\n",orderNode[n->id-1].n->id,orderNode[n->id-1].n->numAdj);
+// 		printf("Greedy n %d: %dadj\n",orderNode[n->id-1].n->id,orderNode[n->id-1].n->numAdj);
 		n=nextNodesList(n);
 	}
 	

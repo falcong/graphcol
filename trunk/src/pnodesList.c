@@ -82,7 +82,7 @@ void printpNodesList(pNodesList *pl)
 
   if(emptypNodesList(pl))
   {
-    printf("Lista di Adiacenza Vuota!\n");
+    printf("Adjacency list empty!\n");
     return;
   }
 
