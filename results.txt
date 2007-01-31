@@ -1,14 +1,4 @@
-INSTANCE	NODE,EDGES	COLORS	RESULT(CONFLICT))	EXECTIME	MAXIT	FIXLONG	PROPLONG
-
-instances/DSJC500.5.col	(500,125248)	57	COLORED(C:0)	18sec	50000it	50fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	57	COLORED(C:0)	17sec	50000it	70fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	56	COLORED(C:0)	32sec	50000it	70fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	55	COLORED(C:0)	55sec	50000it	70fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	54	COLORED(C:0)	166sec	50000it	80fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	51	FAILED(C:41)	276sec	50000it	80fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	52	FAILED(C:26)	241sec	50000it	80fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	53	FAILED(C:21)	251sec	50000it	80fix	0.60prop
-instances/DSJC500.5.col	(500,125248)	54	COLORED(C:0)	196sec	50000it	80fix	0.60prop
+INSTANCE	NODE,EDGES	COLORS	RESULT(CONFLICT))	EXECTIME	NIT/MAXIT	FIXLONG	PROPLONG
 
 instances/DSJC1000.5.col	(1000,499652)	114	COLORED(C:0)	15sec	50000it	70fix	0.60prop
 instances/DSJC1000.5.col	(1000,499652)	113	COLORED(C:0)	14sec	50000it	70fix	0.60prop
@@ -23,4 +13,27 @@ instances/DSJC1000.5.col	(1000,499652)	105	COLORED(C:0)	54sec	50000it	70fix	0.60
 instances/DSJC1000.5.col	(1000,499652)	104	COLORED(C:0)	85sec	50000it	70fix	0.60prop
 instances/DSJC1000.5.col	(1000,499652)	103	COLORED(C:0)	101sec	50000it	70fix	0.60prop
 
-instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	50000it	80fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	57	COLORED(C:0)	18sec	50000it	50fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	57	COLORED(C:0)	17sec	50000it	70fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	56	COLORED(C:0)	32sec	50000it	70fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	55	COLORED(C:0)	55sec	50000it	70fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	54	COLORED(C:0)	166sec	50000it	80fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	51	FAILED(C:41)	276sec	50000it	80fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	52	FAILED(C:26)	241sec	50000it	80fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	53	FAILED(C:21)	251sec	50000it	80fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	54	COLORED(C:0)	196sec	50000it	80fix	0.60prop
+//Nuova metodologia per il set della mosssa tabu
+instances/DSJC500.5.col	(500,125248)	56	COLORED(C:0)	10sec	50000it	20fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	55	COLORED(C:0)	11sec	50000it	20fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	54	COLORED(C:0)	123sec	50000it	50fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	53	FAILED(C:30)	282sec	50000/50000it	70fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	53	COLORED(C:0)	111sec	32282/50000it	30fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	52	FAILED(C:13)	177sec	50000/50000it	30fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	52	FAILED(C:31)	175sec	50000/50000it	30fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	52	FAILED(C:16)	163sec	50000/50000it	20fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	52	COLORED(C:0)	126sec	38155/50000it	10fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	51	FAILED(C:16)	168sec	50000/50000it	10fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	51	FAILED(C:15)	166sec	50000/50000it	5fix	0.60prop
+instances/DSJC500.5.col	(500,125248)	51	FAILED(C:13)	156sec	50000/50000it	10fix	0.50prop
+instances/DSJC500.5.col	(500,125248)	51	FAILED(C:38)	251sec	60000/60000it	15fix	0.70prop
+instances/DSJC500.5.col	(500,125248)	51	FAILED(C:27)	164sec	60000/60000it	15fix	0.60prop

@@ -34,7 +34,7 @@ Function that print in a "out.dot" file the resulting graph of the computation
 void printDotOut(NodesList *l);
 
 
-boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt);
+boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt);
 
 void randomColor(Graph *g, int numColors);
 
@@ -48,7 +48,7 @@ int adjConflicting(Node *n, int **adjColors);
 
 boolean isConflicting(Graph *g, int id, int **adjColors);
 
-oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
+oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt, int nC, int bestNc);
 
 void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors);
 
@@ -56,7 +56,7 @@ void updateAdjacencyTabu(Graph *g, int **adjColors, int id, int color, int newCo
 
 int moveProfit(int **adjColors, Node *n, int newColor, int numColors);
 
-boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors);
+boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors,int nC ,int bestNc);
 
 int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
 
