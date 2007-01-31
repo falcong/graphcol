@@ -1,7 +1,7 @@
 #include "../inc/defs.h"
 #include "../inc/routines.h"
 
-void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong);
+void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt);
 
 
 int main(int argc, char *argv[])
@@ -9,7 +9,7 @@ int main(int argc, char *argv[])
   char instFile[LUNGHEZZA+1];
   Graph *g;
   int colors,verbosity;
-  int fixLong,maxIt;
+  int fixLong,maxIt,stopIt;
   float propLong;
   boolean result;
   int startTime,stopTime,execTime;
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 			randomColor(g,colors);
 			
 			startTime=time(NULL);
-			result=findTabu(g,colors,fixLong,propLong,maxIt);
+			result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt);
 			stopTime=time(NULL);
 			execTime=stopTime-startTime;
 			
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 				printf("\nFailed to find %d-coloring for the current graph\n",colors);
 				printf("Remaining %d conflicting nodes\n\n",result);
 			}
-			printProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong);
+			printProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt);
 			
 			colors--;
 		}
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
   	randomColor(g,colors);
   
   	startTime=time(NULL);
-  	result=findTabu(g,colors,fixLong,propLong,maxIt);
+		result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt);
 		stopTime=time(NULL);
 		execTime=stopTime-startTime;
   
@@ -71,13 +71,13 @@ int main(int argc, char *argv[])
 			printf("Remaining %d conflicting nodes\n\n",result);
 		}
 		
-		printProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong);
+		printProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt);
 	}
   
   return 0;
 }
 
-void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong)
+void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt)
 {
   
   FILE *fResults;
@@ -99,7 +99,7 @@ void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors
   else
     fprintf(fResults,"FAILED(C:%d)\t",result);
   
-  fprintf(fResults,"%dsec\t%dit\t%dfix\t%.2fprop",execTime,maxIt,fixLong,propLong);
+  fprintf(fResults,"%dsec\t%d/%dit\t%dfix\t%.2fprop",execTime,stopIt,maxIt,fixLong,propLong);
   fclose(fResults);
   
   switch(type)

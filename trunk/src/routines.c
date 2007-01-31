@@ -289,12 +289,14 @@ void printDotOut(NodesList *l)
   fclose(pf);
 }
 
-
-boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt)
+/**
+Function that perform the tabu search on given Graph with given number of colors
+*/
+boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt)
 {
   int **tabuList;
   int **adjColors;
-  int i,j,nIt,nC,oldC,tabuT;
+  int i,j,nIt,nC,bestNc,oldC,tabuT;
   oneMove *move;
   Node *n;
 
@@ -302,7 +304,8 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   {
     tabuList = (int **) calloc(sizeof(int *),g->numNodes);
     if(tabuList == NULL)
-    {
+		{
+
       printf("Not enough memory to allocate tabu list\n");
       exit(EXIT_MEMORY);
     }
@@ -350,41 +353,50 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   
   //Init the adjacency matrix with the solution values
   buildAdjacency(g,adjColors);
-//   printAdjacency(adjColors,g,numColors);
-  
+
   nIt=0;
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	bestNc=nC;
   printf("Number of conflicting nodes:%d\n",nC);
-  
+
   while(nC > 0 && nIt < maxIt)
   {
     nIt++;
-    
-    move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt);
-    
+		//Find the best 1-move 
+    move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt,nC,bestNc);
     if(move->id==-1)
     {
       printf("It%d\t(conf:%d):\tNo available moves!\tSkip to next iteration!\n",nIt,nC);
       continue;
     }
-    
+		
+		//Do the best 1-move
     n=getNodeFromList(move->id,g->nodesList);
     oldC=n->color;
     n->color=move->bestNew;
-
+		//Set the move tabu
     tabuT=setTabu(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt);
-    updateAdjacency(g,adjColors,move,numColors);
-
+    //Update adjacency matrix
+		updateAdjacency(g,adjColors,move,numColors);
+		//Update the obj function
     nC=nodesConflicting(g->nodesList,adjColors,numColors);
 		
-    printf("It%d\t(conf:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,nC,move->id,move->color,move->bestNew,tabuT-nIt);
+		if(nC<bestNc)
+		{
+			bestNc=nC;
+		}
+		
+    printf("It%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
 //   printAdjacency(adjColors,g,numColors);
-  
+  *stopIt=nIt;
   return nC;
 }
 
+/**
+Random color the graph with numColors colors
+*/
 void randomColor(Graph *g, int numColors)
 {
   Node *n;
@@ -402,6 +414,9 @@ void randomColor(Graph *g, int numColors)
   }
 }
 
+/**
+Build the adjacency matrix from the Graph starting status
+*/
 void buildAdjacency(Graph *g,int **adjColors)
 {
   Node *n;
@@ -409,12 +424,15 @@ void buildAdjacency(Graph *g,int **adjColors)
   
   n=firstNodesList(g->nodesList);
   
+	//For each node
   while(!endNodesList(n,g->nodesList))
   {
     pn=firstpNodesList(n->adj);
     
+		//For each adjacent node
     while(!endpNodesList(pn,n->adj))
     {
+			//Increment column with same color of current visiting node
       adjColors[n->id-1][pn->n->color]++;
       pn=nextpNodesList(pn);
     } 
@@ -422,6 +440,9 @@ void buildAdjacency(Graph *g,int **adjColors)
   }
 }
 
+/**
+Update the adjacency matrix from the current move and Graph status 
+*/
 void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors)
 {
   Node *n;
@@ -431,9 +452,12 @@ void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors)
   
   pn=firstpNodesList(n->adj);
   
+	//For each adjacent node update the adjacency matrix
   while(!endpNodesList(pn,n->adj))
   {
-    adjColors[(pn->n->id)-1][move->color]--;
+		//decrement column with same old color
+    adjColors[(pn->n->id)-1][move->color]--; 
+		//increment column with same new color
     adjColors[(pn->n->id)-1][move->bestNew]++;
     pn=nextpNodesList(pn);
   }
@@ -473,6 +497,10 @@ void printAdjacency(int **adjColors,Graph *g,int numColors)
   }
 }
 
+
+/**
+Obj Function: Return the number of conflicting nodes in the Graph
+*/
 int nodesConflicting(NodesList *nl, int **adjColors, int numColors)
 {
   Node *n;
@@ -481,8 +509,11 @@ int nodesConflicting(NodesList *nl, int **adjColors, int numColors)
   cc=0;
   n=firstNodesList(nl);
 
+	//For each node
   while(!endNodesList(n,nl))
-  {
+  {	
+		//Increment the obj func if there are almost
+		//one adjacent node of the same color
     if(adjConflicting(n,adjColors)>0)
       cc++;
     n=nextNodesList(n);
@@ -491,28 +522,30 @@ int nodesConflicting(NodesList *nl, int **adjColors, int numColors)
   return cc;
 }
 
+/**
+Return the conflicting number of nodes for the node
+*/
 int adjConflicting(Node *n, int **adjColors)
 {
-  int acn; //Adjacent conflicting nodes
-  
-  acn=adjColors[n->id-1][n->color];
-
-  return acn;
+	return adjColors[n->id-1][n->color];
 }
 
+/**
+Return boolean value, if the node is ajacent to a node with the same color
+*/
 boolean isConflicting(Graph *g, int id, int **adjColors)
 {
   Node *n;
   
   n=getNodeFromList(id,g->nodesList);
 
-  if(adjColors[n->id-1][n->color]>0)
-    return TRUE;
+  if(adjColors[n->id-1][n->color]>0)	
+		return TRUE; //if the adjacency for the node at his color is greater than 0
   else
     return FALSE;
 }
 
-oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt)
+oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt, int nC, int bestNc)
 {
   int i,best,profit;
   oneMove bestMove;
@@ -527,23 +560,20 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
   chosen=FALSE;
   
   n=firstNodesList(g->nodesList);
-  
-	//Finding best move
+	//For each node
   while(!endNodesList(n,g->nodesList))
-  {
-//     printf("%d ",n->id);
+  {	//If the node is conflicting
     if(isConflicting(g,n->id,adjColors))
-    {
-//       printf("%d ",n->id);
+    {	//For each possible coloring
       for(i=0;i<numColors;i++)
-      {
+      {	//Except current color
         if(i!=n->color)
-        {
-          if(!isTabu(g,adjColors,n->id,i,tabuList,nIt,numColors))
-          {
+        {	//If the move isn't tabu
+          if(!isTabu(g,adjColors,n->id,i,tabuList,nIt,numColors,nC,bestNc))
+          {	//Save the best 1-move
             if((profit=moveProfit(adjColors,n,i,numColors))<best)
             {
-  //             printf("%d(%d=>%d):%d\n",n->id,n->color,i,profit);
+//               printf("%d(%d=>%d):%d\n",n->id,n->color,i,profit);
               chosen=TRUE;
               best=profit;
               bestMove.id=n->id;
@@ -557,93 +587,62 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
     n=nextNodesList(n);
   }
 	
-	//Find best color for random move
-// 	while(!chosen)
-// 	{
-// 		bestMove.id = (rand()%g->numNodes)+1;
-// 		while(!isConflicting(g,bestMove.id,adjColors))
-// 		{
-// // 			printf("id:%d\n",bestMove.id);
-// 			bestMove.id = (rand()%g->numNodes)+1;
-// 		}
-// 		
-// // 		printf("id:%d\n",bestMove.id);
-// 		
-// 		for(i=0;i<numColors;i++)
-// 		{
-// 			if(!isTabu(g,adjColors,bestMove.id,i,tabuList,nIt,numColors))
-// 			{
-// 				n=getNodeFromList(bestMove.id,g->nodesList);
-// 				
-// 				if((profit=moveProfit(adjColors,n,i,numColors))<best)
-// 				{
-// 					chosen=TRUE;
-// 					best=profit;
-// 					bestMove.id=n->id;
-// 					bestMove.color=n->color;
-// 					bestMove.bestNew=i;
-// 				}
-// 			}
-// 		}
-// 	}
-	
-	
-  
   if(chosen==TRUE)
-  {
+  {	//Return the best 1-move
     move->id=bestMove.id;
     move->color=bestMove.color;
     move->bestNew=bestMove.bestNew;
   }
   else
-  {
+  {	//Return information that no valid move is finded
     move->id=-1;
     move->color=bestMove.color;
     move->bestNew=bestMove.bestNew;
   }
-  
   return move;
 }
 
+/**
+Function that returns the profit given by a 1-move
+*/
 int moveProfit(int **adjColors, Node *n, int newColor, int numColors)
 {
   int profit;
-  
+	//Subtract the profit given by leaving the current color: is the number of 
+	//conflicting nodes that it will be lost.
   profit=-adjColors[n->id-1][n->color];
 //   printf("profit[%d(%d)]=%d\n",n->id,n->color,profit);
-  
+
+	//Sum the loss given by entering in new class color: is the number of 
+	//conflicting nodes that it will be owned
   profit+=adjColors[n->id-1][newColor];
 //   printf("profit[%d(%d)]= +%d\n",n->id,n->color,adjColors[n->id-1][newColor]);
   
-  return profit;
+	return profit;
 }
 
-boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors)
+boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors, int nC, int bestNc)
 {
-  int tempColor,nC;
+  int tempColor,profit;
   Node *n;
   
   if(tabuList[id-1][color] != 0)
   {
     if(nIt>tabuList[id-1][color])
-    {
-      // Tabu expired
+		{	// Tabu expired
       return FALSE;
     }
     else
-    {
-      // Tabu enable
+    {	// Tabu enable
       
-      //thrown aspiration criterion
-      {
+			  //thrown basic aspiration criterion
+			
+/*      {
         n=getNodeFromList(id,g->nodesList);
         tempColor=n->color;
-        
-//         printf("Check aspiration criterion (%d=>%d ?): ",tempColor,color);
-        
         n->color=color;
         updateAdjacencyTabu(g,adjColors,id,tempColor,color,numColors);
-        
+
         if((nC=nodesConflicting(g->nodesList,adjColors,numColors))==0)
         {
           n->color=tempColor;
@@ -658,11 +657,27 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 //           printf("Not Find (c:%d), roll back (%d=>%d)!\n",nC,color,n->color);
           return TRUE; 
         }
-        
-      
-      }
-      
-//       printf("tabu(it%d):id%d(%d)=tabu since %d\n",nIt,id,color,tabuList[id-1][color]);
+      }*/
+				
+			//thrown enhanced aspiration criterion
+			
+			{
+				n=getNodeFromList(id,g->nodesList);
+				profit=moveProfit(adjColors,n,color,numColors);
+				if(profit+nC<bestNc)
+				{
+					printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d<%d!\n",id,n->color,color,profit+nC,bestNc);
+					return FALSE; 
+				}
+				else
+				{
+					return TRUE;
+				}
+			
+			
+			}
+			
+			//       printf("tabu(it%d):id%d(%d)=tabu since %d\n",nIt,id,color,tabuList[id-1][color]);
       return TRUE;
     }
   }
@@ -672,16 +687,25 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
   }
 }
 
+/**
+Set the tabu time for a given move
+ * There are two different method for using tabu list:
+ * 1- set tabu on couple node-Color
+ * 2- set tabu on couple node-newColor
+*/
 int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt)
 {
   int propValue;
   
   propValue = floor(propLong*(nodesConflicting(g->nodesList,adjColors,numColors)));
   
-//   tabuList[move->id-1][move->bestNew]=nIt+(rand()%fixLong)+propValue;
-  tabuList[move->id-1][move->bestNew]=nIt+fixLong+propValue;
+//   tabuList[move->id-1][move->bestNew]=nIt+fixLong+propValue;
+	tabuList[move->id-1][move->color]=nIt+fixLong+propValue;
+	
 //   printf("SetT(%d,%d)=%d+%d+%d=%d\n",move->id,move->bestNew,nIt,fixLong,propValue,tabuList[move->id-1][move->bestNew]);
-  return tabuList[move->id-1][move->bestNew];
+//   return tabuList[move->id-1][move->bestNew];
+	return tabuList[move->id-1][move->color];
+	
 }
 
 int greedyColor(Graph *g)
