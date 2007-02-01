@@ -296,7 +296,7 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
 {
   int **tabuList;
   int **adjColors;
-  int i,j,nIt,nC,bestNc,oldC,tabuT;
+  int i,j,nIt,nC,bestNc,oldC,tabuT,endIt;
   oneMove *move;
   Node *n;
 
@@ -358,8 +358,9 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
 	bestNc=nC;
   printf("Number of conflicting nodes:%d\n",nC);
-
-  while(nC > 0 && nIt < maxIt)
+	endIt=maxIt;
+	
+  while(nC > 0 && nIt < endIt)
   {
     nIt++;
 		//Find the best 1-move 
@@ -384,9 +385,10 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
 		if(nC<bestNc)
 		{
 			bestNc=nC;
+			endIt=nIt+maxIt;
 		}
 		
-    printf("It%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
+    printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
 //   printAdjacency(adjColors,g,numColors);
@@ -545,6 +547,23 @@ boolean isConflicting(Graph *g, int id, int **adjColors)
     return FALSE;
 }
 
+void printConflictingNodesList(Graph *g,int **adjColors)
+{
+	Node *n;
+
+	n=firstNodesList(g->nodesList);
+
+	while(!endNodesList(n,g->nodesList))
+	{
+		if(isConflicting(g,n->id,adjColors))
+		{
+			printf("%d(%d)\n",n->id,n->color);
+// 			printpNodesList(n->adj);
+		}
+		n=nextNodesList(n);
+	}
+}
+
 oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt, int nC, int bestNc)
 {
   int i,best,profit;
@@ -665,18 +684,16 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 				n=getNodeFromList(id,g->nodesList);
 				profit=moveProfit(adjColors,n,color,numColors);
 				if(profit+nC<bestNc)
+// 				if(profit+nC==0)
 				{
-					printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d<%d!\n",id,n->color,color,profit+nC,bestNc);
+					printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d+%d=%d<%d!\n",id,n->color,color,profit,nC,profit+nC,bestNc);
 					return FALSE; 
 				}
 				else
 				{
 					return TRUE;
 				}
-			
-			
 			}
-			
 			//       printf("tabu(it%d):id%d(%d)=tabu since %d\n",nIt,id,color,tabuList[id-1][color]);
       return TRUE;
     }

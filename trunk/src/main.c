@@ -142,5 +142,7 @@ void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors
 			fprintf(fLegalColoring,"%d\t%d\n",n->id,n->color);
 			n=nextNodesList(n);
 		}
+		
+		fclose(fLegalColoring);
 	}	
 }

@@ -48,6 +48,8 @@ int adjConflicting(Node *n, int **adjColors);
 
 boolean isConflicting(Graph *g, int id, int **adjColors);
 
+void printConflictingNodesList(Graph *g,int **adjColors);
+
 oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt, int nC, int bestNc);
 
 void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors);

@@ -127,7 +127,6 @@ void appendNodesList (Node *n, NodesList *l)
  * -id
  * -color
 */
-
 void printNodesList(NodesList *l)
 {
   Node *n;
