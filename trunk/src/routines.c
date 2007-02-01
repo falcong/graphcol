@@ -388,7 +388,7 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
 			endIt=nIt+maxIt;
 		}
 		
-    printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
+		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
 //   printAdjacency(adjColors,g,numColors);
@@ -642,7 +642,8 @@ int moveProfit(int **adjColors, Node *n, int newColor, int numColors)
 
 boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors, int nC, int bestNc)
 {
-  int tempColor,profit;
+  int profit;
+// 	int tempColor;
   Node *n;
   
   if(tabuList[id-1][color] != 0)
@@ -686,7 +687,7 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 				if(profit+nC<bestNc)
 // 				if(profit+nC==0)
 				{
-					printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d+%d=%d<%d!\n",id,n->color,color,profit,nC,profit+nC,bestNc);
+// 					printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d+%d=%d<%d!\n",id,n->color,color,profit,nC,profit+nC,bestNc);
 					return FALSE; 
 				}
 				else
