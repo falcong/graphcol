@@ -19,7 +19,7 @@ Function that read from the command line the name of the instance file
  */
 void readCommand(int argc,char *argv[],char *instFile, int *colors, int *verbosity);
 
-void readConfFile(int *maxIt,int *fixLong,float *propLong);
+void readConfFile(int *nRestart, int *maxIt, int *fixLong, float *propLong);
 
 
 
@@ -34,9 +34,11 @@ Function that print in a "out.dot" file the resulting graph of the computation
 void printDotOut(NodesList *l);
 
 
-boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt);
+boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adjColors);
 
 void randomColor(Graph *g, int numColors);
+
+void randomConflictingColor(Graph *g, int numColors, int **adjColors);
 
 void buildAdjacency(Graph *g,int **adjColors);
 
@@ -63,6 +65,8 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt);
 
 int greedyColor(Graph *g);
+
+int greedyInitColor(Graph *g,int numColors);
 
 int getGreedyMaxOrder(Graph *g,pNode *orderNode);
 

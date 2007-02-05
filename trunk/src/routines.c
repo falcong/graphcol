@@ -57,7 +57,7 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbos
 
 }
 
-void readConfFile(int *maxIt,int *fixLong,float *propLong)
+void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong)
 {
   FILE *fConf;
   char row[LUNGHEZZA];
@@ -80,8 +80,12 @@ void readConfFile(int *maxIt,int *fixLong,float *propLong)
       case '#': //comment row
                 break;
       default:{
-//                 printf("stringa: %s\n",row);
-                if(sscanf(row,"MAXIT %d",maxIt)==1)
+// 								printf("stringa: %s\n",row);
+								if(sscanf(row,"REST %d",nRestart)==1)
+								{
+//                   printf("Rest it:%d\n",*nRestart);
+								}
+               	else if(sscanf(row,"MAXIT %d",maxIt)==1)
                 {
 //                   printf("Max it:%d\n",*maxIt);
                 }
@@ -126,6 +130,7 @@ Graph *loadGraph(char *instFile)
   Node *nW, *nV;
   Graph *g;
 
+	g=NULL;
   problemRead = FALSE;
 
   finst=fopen(instFile,"r");
@@ -292,7 +297,7 @@ void printDotOut(NodesList *l)
 /**
 Function that perform the tabu search on given Graph with given number of colors
 */
-boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt)
+boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
 {
   int **tabuList;
   int **adjColors;
@@ -305,17 +310,23 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
     tabuList = (int **) calloc(sizeof(int *),g->numNodes);
     if(tabuList == NULL)
 		{
-
       printf("Not enough memory to allocate tabu list\n");
       exit(EXIT_MEMORY);
     }
     
-    adjColors = (int **) calloc(sizeof(int *),g->numNodes);
-    if(adjColors == NULL)
-    {
-      printf("Not enough memory to allocate adjacency matrix\n");
-      exit(EXIT_MEMORY);
-    }
+		if(*adj == NULL)
+		{
+			adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+			if(adjColors == NULL)
+			{
+				printf("Not enough memory to allocate adjacency matrix\n");
+				exit(EXIT_MEMORY);
+			}
+		}
+		else
+		{
+			adjColors = *adj;
+		}
     
     move=(oneMove *) malloc(sizeof(oneMove));
     if(move == NULL)
@@ -347,8 +358,7 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
         tabuList[i][j]=0;
         adjColors[i][j]=0;
       }
-    }  
-    
+    }
   }
   
   //Init the adjacency matrix with the solution values
@@ -387,13 +397,14 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
 			bestNc=nC;
 			endIt=nIt+maxIt;
 		}
-		
+				
 		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
 //   printAdjacency(adjColors,g,numColors);
+	*adj=adjColors;
   *stopIt=nIt;
-  return nC;
+  return bestNc;
 }
 
 /**
@@ -414,6 +425,24 @@ void randomColor(Graph *g, int numColors)
 //     printf("%d<=(%d)\n",n->id,n->color);
     n=nextNodesList(n);
   }
+}
+
+void randomConflictingColor(Graph *g, int numColors, int **adjColors)
+{
+	Node *n;
+	srand((unsigned int) time(NULL));
+  
+	n=firstNodesList(g->nodesList);
+  
+	printf("Random coloring the conflicting nodes graph\n");
+  
+	while(!endNodesList(n,g->nodesList))
+	{
+		if(isConflicting(g,n->id,adjColors))
+			n->color=(rand()%numColors);
+//     printf("%d<=(%d)\n",n->id,n->color);
+		n=nextNodesList(n);
+	}
 }
 
 /**
@@ -498,7 +527,6 @@ void printAdjacency(int **adjColors,Graph *g,int numColors)
     printf("\n");
   }
 }
-
 
 /**
 Obj Function: Return the number of conflicting nodes in the Graph
@@ -687,7 +715,7 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 				if(profit+nC<bestNc)
 // 				if(profit+nC==0)
 				{
-// 					printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d+%d=%d<%d!\n",id,n->color,color,profit,nC,profit+nC,bestNc);
+// 					printf("Activated tabu aspiration criterion:(node %d: %d=>%d) -> conflict:%d+%d=%d<%d!\n",id,n->color,color,profit,nC,profit+nC,bestNc);
 					return FALSE; 
 				}
 				else
@@ -706,10 +734,7 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 }
 
 /**
-Set the tabu time for a given move
- * There are two different method for using tabu list:
- * 1- set tabu on couple node-Color
- * 2- set tabu on couple node-newColor
+Set the tabu time for a given move on couple node-Color
 */
 int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt)
 {
@@ -717,11 +742,9 @@ int setTabu(Graph *g,int **adjColors, int **tabuList, int numColors, oneMove *mo
   
   propValue = floor(propLong*(nodesConflicting(g->nodesList,adjColors,numColors)));
   
-//   tabuList[move->id-1][move->bestNew]=nIt+fixLong+propValue;
 	tabuList[move->id-1][move->color]=nIt+fixLong+propValue;
 	
 //   printf("SetT(%d,%d)=%d+%d+%d=%d\n",move->id,move->bestNew,nIt,fixLong,propValue,tabuList[move->id-1][move->bestNew]);
-//   return tabuList[move->id-1][move->bestNew];
 	return tabuList[move->id-1][move->color];
 	
 }
@@ -777,6 +800,61 @@ int greedyColor(Graph *g)
 	return iMax+1;
 }
 
+int greedyInitColor(Graph *g,int numColors)
+{
+	int i,id,iMax,minColor;
+	boolean colored;
+	pNode *orderNode;
+	Node *n;
+	
+	orderNode=(pNode *)calloc(g->numNodes,sizeof(pNode));
+	if(orderNode==NULL)
+	{
+		printf("Not enough memory to allocate greedy list\n");
+		exit(EXIT_MEMORY);	
+	}
+	
+	n=firstNodesList(g->nodesList);
+	
+	while(!endNodesList(n,g->nodesList))
+	{	
+		orderNode[n->id-1].n=n;
+// 		printf("Greedy n %d: %dadj\n",orderNode[n->id-1].n->id,orderNode[n->id-1].n->numAdj);
+		n=nextNodesList(n);
+	}
+	
+	srand((unsigned int)time(NULL));
+	iMax=0;
+	for(i=0;i<g->numNodes;i++)
+	{
+		id=getGreedyMaxOrder(g,orderNode);
+		printf("%d-",id);
+		colored=FALSE;
+		minColor=0;
+		
+		while(!colored && minColor <=numColors)
+		{
+			if(colorAdjFree(orderNode[id-1].n,minColor))
+			{
+				orderNode[id-1].n->color=minColor;
+				colored= TRUE;
+			}
+			else
+			{
+				minColor++;
+			}
+			
+			if(minColor==numColors)
+			{
+				orderNode[id-1].n->color=rand()%numColors;
+				colored= TRUE;
+			}
+		}
+	}
+		
+	return 0;
+}
+
 int getGreedyMaxOrder(Graph *g,pNode *orderNode)
 {
 	int i,ordMax,idOrdMax;
@@ -790,7 +868,7 @@ int getGreedyMaxOrder(Graph *g,pNode *orderNode)
 		{
 			if(orderNode[i].n->numAdj > ordMax)
 			{
-				printf("Node %d\n",orderNode[i].n->id);
+// 				printf("Node %d\n",orderNode[i].n->id);
 				ordMax=orderNode[i].n->numAdj;
 				idOrdMax=i+1;
 			}
@@ -816,4 +894,3 @@ boolean colorAdjFree(Node *n,int color)
 
 	return TRUE;
 }
-

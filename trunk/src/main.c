@@ -1,7 +1,9 @@
 #include "../inc/defs.h"
 #include "../inc/routines.h"
 
-void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt);
+void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart);
+
+void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int verbosity, char *instFile, int nRestart);
 
 
 int main(int argc, char *argv[])
@@ -9,82 +11,117 @@ int main(int argc, char *argv[])
   char instFile[LUNGHEZZA+1];
   Graph *g;
   int colors,verbosity;
-  int fixLong,maxIt,stopIt;
+  int fixLong,maxIt,nRestart;
   float propLong;
-  boolean result;
-  int startTime,stopTime,execTime;
-
+	
   //Reading instance file
   readCommand(argc,argv,instFile,&colors,&verbosity);
   //Loading instance file & building graph struct
   g=loadGraph(instFile);
-  //Set default tabu search values
+  
+	//Set default tabu search values
   maxIt=1000;
   fixLong=g->numNodes/2;
   propLong=0.5;
-  //Reading configuration file
-  readConfFile(&maxIt,&fixLong,&propLong);
+	nRestart=0;
+	
+	//Reading configuration file
+  readConfFile(&nRestart,&maxIt,&fixLong,&propLong);
+	 
+	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
+	
+  return 0;
+}
+
+void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int verbosity, char *instFile, int nRestart)
+{
+	boolean findmin;
+	int startTime,stopTime,execTime;
+	int result,stopIt,restIt,nR;
+	int **adjColors;
+	
+	adjColors=NULL;
+	nR=0;
 	
 	if(colors==-1)
-	{
+	{	//Number of colors not chosen: find upperbound value
 		colors=greedyColor(g);
 		printf("Greedy Colors:%d\n",colors);
-		
-		result=FALSE;
-		while(!result)
+			
+		findmin=FALSE;
+		while(!findmin)
 		{
 			//Build the random initial solution
 			randomColor(g,colors);
-			
 			startTime=time(NULL);
-			result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt);
+			result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
 			stopTime=time(NULL);
 			execTime=stopTime-startTime;
 			
 			if(result==0)
-				printf("Find %d-coloring for the current graph\n",colors);
+				printf("Find %d-coloring for the current graph with Tabucol\n",colors);
 			else
 			{
-				printf("\nFailed to find %d-coloring for the current graph\n",colors);
+				printf("\nFailed to find %d-coloring for the current graph with Tabucol\n",colors);
 				printf("Remaining %d conflicting nodes\n\n",result);
+				findmin=TRUE;
 			}
-			printProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt);
-			
+			printTabuProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt,nR);
 			colors--;
 		}
 	}
 	else
 	{
+		//Number of colors chosen
   	//Build the random initial solution
-  	randomColor(g,colors);
-  
-  	startTime=time(NULL);
-		result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt);
-		stopTime=time(NULL);
-		execTime=stopTime-startTime;
+		randomColor(g,colors);
+
+		startTime=time(NULL);
+		result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+		restIt=stopIt;
   
 		if(result==0)
-			printf("Find %d-coloring for the current graph\n",colors);
+			printf("Find %d-coloring for the current graph with Tabucol\n",colors);
 		else
 		{
-			printf("\nFailed to find %d-coloring for the current graph\n",colors);
+			printf("\nFailed to find %d-coloring for the current graph with Tabucol\n",colors);
 			printf("Remaining %d conflicting nodes\n\n",result);
+			
+			while(result!=0 && nR<nRestart)
+			{
+				nR++;
+				randomConflictingColor(g,colors,adjColors);
+				result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+				restIt+=stopIt;
+				
+				if(result==0)
+				{
+					printf("Find %d-coloring for the current graph with Tabucol(r:%d)\n",colors,nRestart);
+					break;
+				}
+				else
+				{
+					printf("\nFailed to find %d-coloring for the current graph with Tabucol(r:%d)\n",colors,nRestart);
+					printf("Remaining %d conflicting nodes\n\n",result);
+				}
+				
+			}
 		}
 		
-		printProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt);
+		stopTime=time(NULL);
+		execTime=stopTime-startTime;
+		printTabuProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,restIt,nR);
 	}
-  
-  return 0;
 }
 
-void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt)
+
+void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart)
 {
   
-  FILE *fResults;
-	FILE *fLegalColoring;
-	char *solfilename,filename[LUNGHEZZA];
+	FILE *fResults,*fLegalColoring;
+	char solfilename[LUNGHEZZA],filename[LUNGHEZZA];
 	Node *n;
-  
+	
   fResults=fopen("results.txt","a");
 	if(fResults==NULL)
 	{
@@ -99,13 +136,11 @@ void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors
   else
     fprintf(fResults,"FAILED(C:%d)\t",result);
   
-  fprintf(fResults,"%dsec\t%d/%dit\t%dfix\t%.2fprop",execTime,stopIt,maxIt,fixLong,propLong);
+  fprintf(fResults,"%dsec\t%d/%dit\t%dfix\t%.2fprop\tr:%d",execTime,stopIt,maxIt,fixLong,propLong,nRestart);
   fclose(fResults);
   
   switch(type)
   {
-    case 0: 
-            break;
 		case 1: printf("Printing graph image\n");
 						printDotOut(g->nodesList);
             system("dot out.dot -Tpng > out.png");
@@ -123,6 +158,8 @@ void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors
 			printf("Error in opening coloring solution file\n");
 			exit(EXIT_OPENFILE);
 		}
+		
+		printf("Printing %d-coloring solution for the current graph: %s(%d).sol\n",colors,filename,colors);
 		
 		sprintf(solfilename,"instances_colored/%s(%d).sol",filename,colors);
 		
@@ -145,4 +182,10 @@ void printProcessInfo(Graph *g, int type, int result, char *instFile, int colors
 		
 		fclose(fLegalColoring);
 	}	
+	else
+	{
+		printf("Not Printing %d-coloring solution for the current graph\n",colors);	
+	}
 }
+
+
