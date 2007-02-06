@@ -15,10 +15,10 @@ CFLAGRELEASE = -O3 -Wall -fmessage-length=0
 CFLAGOBJ = -lm
 
 #Flag per il Debug
-# CFLAG = $(CFLAGDEBUG)
+CFLAG = $(CFLAGDEBUG)
 
 #Flag per Release
-CFLAG = $(CFLAGRELEASE)
+# CFLAG = $(CFLAGRELEASE)
 
 # ------------------------------------------------------------------------------
 

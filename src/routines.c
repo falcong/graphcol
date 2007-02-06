@@ -407,6 +407,12 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   return bestNc;
 }
 
+int findSA(Graph *g,int colors,int *stopIt,int ***adjColors)
+{
+
+	return 0;
+}
+
 /**
 Random color the graph with numColors colors
 */
