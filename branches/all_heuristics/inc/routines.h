@@ -36,6 +36,8 @@ void printDotOut(NodesList *l);
 
 boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adjColors);
 
+int findSA(Graph *g,int colors,int *stopIt,int ***adjColors);
+
 void randomColor(Graph *g, int numColors);
 
 void randomConflictingColor(Graph *g, int numColors, int **adjColors);

@@ -1,10 +1,13 @@
 #include "../inc/defs.h"
 #include "../inc/routines.h"
 
-void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart);
-
 void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int verbosity, char *instFile, int nRestart);
 
+void doSA(int colors, Graph *g, int verbosity, char *instFile, int maxIt);
+
+void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart);
+
+void printSAProcessInfo(Graph *g,int verbosity,int result,char *instFile,int colors,int execTime);
 
 int main(int argc, char *argv[])
 {
@@ -114,6 +117,43 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 	}
 }
 
+void doSA(int colors, Graph *g, int verbosity, char *instFile, int maxIt)
+{
+	int startTime,stopTime,execTime;
+	int result,stopIt;
+	int **adjColors;
+	boolean findmin;
+	
+	adjColors=NULL;
+
+	colors=greedyColor(g);
+	printf("Greedy Colors:%d\n",colors);
+			
+	findmin=FALSE;
+	while(!findmin)
+	{
+		//Build the random initial solution
+		randomColor(g,colors);
+		
+		startTime=time(NULL);
+		result=findSA(g,colors,&stopIt,&adjColors);
+		stopTime=time(NULL);
+		execTime=stopTime-startTime;
+			
+		if(result==0)
+			printf("Find %d-coloring for the current graph with Simulated Annealing\n",colors);
+		else
+		{
+			printf("\nFailed to find %d-coloring for the current graph Simulated Annealing\n",colors);
+			printf("Remaining %d conflicting nodes\n\n",result);
+			findmin=TRUE;
+		}
+		
+		printSAProcessInfo(g,verbosity,result,instFile,colors,execTime);
+		colors--;
+	}
+}
+
 
 void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart)
 {
@@ -188,4 +228,7 @@ void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int co
 	}
 }
 
+void printSAProcessInfo(Graph *g,int verbosity,int result,char *instFile,int colors,int execTime)
+{
 
+}
