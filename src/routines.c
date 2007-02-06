@@ -297,7 +297,7 @@ void printDotOut(NodesList *l)
 /**
 Function that perform the tabu search on given Graph with given number of colors
 */
-boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
+int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
 {
   int **tabuList;
   int **adjColors;
