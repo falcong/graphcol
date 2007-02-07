@@ -412,7 +412,7 @@ Random color the graph with numColors colors
 void randomColor(Graph *g, int numColors)
 {
   Node *n;
-  srand((unsigned int) time(NULL));
+//   srand((unsigned int) time(NULL));
   
   n=firstNodesList(g->nodesList);
   
@@ -429,7 +429,7 @@ void randomColor(Graph *g, int numColors)
 void randomConflictingColor(Graph *g, int numColors, int **adjColors)
 {
 	Node *n;
-	srand((unsigned int) time(NULL));
+// 	srand((unsigned int) time(NULL));
   
 	n=firstNodesList(g->nodesList);
   
@@ -822,7 +822,7 @@ int greedyInitColor(Graph *g,int numColors)
 		n=nextNodesList(n);
 	}
 	
-	srand((unsigned int)time(NULL));
+// 	srand((unsigned int)time(NULL));
 	iMax=0;
 	for(i=0;i<g->numNodes;i++)
 	{
