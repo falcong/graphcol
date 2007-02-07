@@ -306,7 +306,6 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
   Node *n;
 
   //Build tabu list,adjacency matrix & 1-move 
-  {
     tabuList = (int **) calloc(sizeof(int *),g->numNodes);
     if(tabuList == NULL)
 		{
@@ -314,18 +313,11 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
       exit(EXIT_MEMORY);
     }
     
-		if(*adj == NULL)
+		adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+		if(adjColors == NULL)
 		{
-			adjColors = (int **) calloc(sizeof(int *),g->numNodes);
-			if(adjColors == NULL)
-			{
 				printf("Not enough memory to allocate adjacency matrix\n");
 				exit(EXIT_MEMORY);
-			}
-		}
-		else
-		{
-			adjColors = *adj;
 		}
     
     move=(oneMove *) malloc(sizeof(oneMove));
@@ -359,7 +351,6 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
         adjColors[i][j]=0;
       }
     }
-  }
   
   //Init the adjacency matrix with the solution values
   buildAdjacency(g,adjColors);
@@ -396,6 +387,14 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 		{
 			bestNc=nC;
 			endIt=nIt+maxIt;
+		}
+		
+		if(nC==1)
+		{
+			printConflictingNodesList(g,adjColors);
+			printf("Error in graph struct! Impossible to have only one conflicting node!\n");
+			printf("Printed graph struct\n");
+			exit(EXIT_INCONSISTENCY);
 		}
 				
 		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
