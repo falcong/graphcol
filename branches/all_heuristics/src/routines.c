@@ -407,10 +407,84 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   return bestNc;
 }
 
-int findSA(Graph *g,int colors,int *stopIt,int ***adjColors)
+int findSA(Graph *g,int numColors,int *stopIt,int ***adj, int startTemp)
 {
+	int **adjColors;
+	int i,j,nIt,nC,bestNc,oldC,endIt;
+	oneMove *move;
+	Node *n;
+	
+	adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+	if(adjColors == NULL)
+	{
+		printf("Not enough memory to allocate adjacency matrix\n");
+		exit(EXIT_MEMORY);
+	}
+		
+	move=(oneMove *) malloc(sizeof(oneMove));
+	if(move == NULL)
+	{
+		printf("Not enough memory to allocate move!\n");
+		exit(EXIT_MEMORY);
+	}
+	
+	for(i=0;i<g->numNodes;i++)
+	{
+		adjColors[i] = (int *) calloc(sizeof(int),numColors);
+		
+		if(adjColors[i] == NULL)
+		{
+			printf("Not enough memory to allocate adjacency matrix\n");
+			exit(EXIT_MEMORY);
+		}
 
-	return 0;
+		for(j=0;j<numColors;j++)
+		{
+			adjColors[i][j]=0;
+		}
+	}
+		
+	//Init the adjacency matrix with the solution values
+	buildAdjacency(g,adjColors);
+	
+// 	printAdjacency(adjColors,g,numColors);
+	
+// 	exit(0);
+
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	bestNc=nC;
+	printf("Number of conflicting nodes:%d\n",nC);
+	
+	while(nC > 0)
+	{
+		nIt++;
+		
+		//Generate random move 
+// 		move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt,nC,bestNc);
+		move=findRandom1Move(g,adjColors,numColors,move);
+				
+		//Do the 1-move
+		n=getNodeFromList(move->id,g->nodesList);
+		oldC=n->color;
+		n->color=move->bestNew;
+		
+    //Update adjacency matrix
+		updateAdjacency(g,adjColors,move,numColors);
+		
+		//Update the obj function
+		nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		
+		if(nC<bestNc)
+		{
+			bestNc=nC;
+		}
+				
+		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew);
+	}
+	
+	*adj=adjColors;
+	*stopIt=nIt;
+	return bestNc;
 }
 
 /**
@@ -653,6 +727,20 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
     move->bestNew=bestMove.bestNew;
   }
   return move;
+}
+
+oneMove *findRandom1Move(Graph *g,int **adjColors, int numColors, oneMove *move)
+{
+	int id;
+	int newColor;
+	srand((unsigned int)time(NULL));
+	
+	id=rand()%g->numNodes;
+	newColor=rand()%numColors;
+
+	move->id=id;
+	move->bestNew=newColor;
+	return move;
 }
 
 /**
