@@ -455,8 +455,6 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 	nIt=0;
 	currentTemp=startTemp;
 	
-	srand(1000);
-	
 	while(nC > 0 && nIt < 10)
 	{
 		nIt++;
@@ -522,7 +520,7 @@ Random color the graph with numColors colors
 void randomColor(Graph *g, int numColors)
 {
   Node *n;
-  srand((unsigned int) time(NULL));
+//   srand((unsigned int) time(NULL));
   
   n=firstNodesList(g->nodesList);
   
@@ -539,7 +537,7 @@ void randomColor(Graph *g, int numColors)
 void randomConflictingColor(Graph *g, int numColors, int **adjColors)
 {
 	Node *n;
-	srand((unsigned int) time(NULL));
+// 	srand((unsigned int) time(NULL));
   
 	n=firstNodesList(g->nodesList);
   
@@ -959,7 +957,7 @@ int greedyInitColor(Graph *g,int numColors)
 		n=nextNodesList(n);
 	}
 	
-	srand((unsigned int)time(NULL));
+// 	srand((unsigned int)time(NULL));
 	iMax=0;
 	for(i=0;i<g->numNodes;i++)
 	{

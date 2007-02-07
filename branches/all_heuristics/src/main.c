@@ -28,6 +28,8 @@ int main(int argc, char *argv[])
   propLong=0.5;
 	nRestart=0;
 	
+	srand((unsigned int)time(NULL));
+	
 	//Reading configuration file
   readConfFile(&nRestart,&maxIt,&fixLong,&propLong);
 	 
