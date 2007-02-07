@@ -407,10 +407,12 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   return bestNc;
 }
 
-int findSA(Graph *g,int numColors,int *stopIt,int ***adj, int startTemp)
+int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float tempFactor)
 {
 	int **adjColors;
-	int i,j,nIt,nC,bestNc,oldC,endIt;
+	int i,j,nIt,nC,bestNc,profit;
+	float currentTemp;
+	double exponent,dice;
 	oneMove *move;
 	Node *n;
 	
@@ -447,26 +449,55 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, int startTemp)
 	//Init the adjacency matrix with the solution values
 	buildAdjacency(g,adjColors);
 	
-// 	printAdjacency(adjColors,g,numColors);
-	
-// 	exit(0);
-
 	nC=nodesConflicting(g->nodesList,adjColors,numColors);
-	bestNc=nC;
 	printf("Number of conflicting nodes:%d\n",nC);
 	
-	while(nC > 0)
+	nIt=0;
+	currentTemp=startTemp;
+	
+	srand(1000);
+	
+	while(nC > 0 && nIt < 10)
 	{
 		nIt++;
 		
 		//Generate random move 
-// 		move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt,nC,bestNc);
-		move=findRandom1Move(g,adjColors,numColors,move);
-				
-		//Do the 1-move
+		move=findRandomSA1Move(g,adjColors,numColors,move);
+		
 		n=getNodeFromList(move->id,g->nodesList);
-		oldC=n->color;
+		
+		//Check if the move is valid
+		profit=moveProfit(adjColors,n,move->bestNew,numColors);
+		printf("profit(%d: %d=>%d):%d ",move->id,move->color,move->bestNew,profit);
+		
+		if(profit<=0)
+		{	//Downhill move
+			//Do the move
+			printf(" Ok\n");
+		}
+		else
+		{	//Uphill move
+			dice=fmod(drand48(),2);	
+			exponent=-profit/currentTemp;
+			
+			printf("dice:%.2f < exp(%.2f):%.2f (T:%.2f)?",dice,exponent,exp(exponent),currentTemp);
+			
+			if(dice<exp(exponent))
+			{
+				printf(" Yes\n");
+			}
+			else
+			{
+				printf(" No\n");
+				continue;
+			}
+		}
+
+		//Do the 1-move
+		move->color=n->color;
 		n->color=move->bestNew;
+		
+// 		printf("It%d\t(conf:%d):\tNode\t%d (%d=>%d)\n",nIt,nC,move->id,move->color,move->bestNew);
 		
     //Update adjacency matrix
 		updateAdjacency(g,adjColors,move,numColors);
@@ -474,17 +505,15 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, int startTemp)
 		//Update the obj function
 		nC=nodesConflicting(g->nodesList,adjColors,numColors);
 		
-		if(nC<bestNc)
-		{
-			bestNc=nC;
-		}
+		//Update temperature value
+		currentTemp=tempFactor*currentTemp;
 				
-		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew);
+		printf("It%d\t(conf:%d):\tNode\t%d (%d=>%d)\n",nIt,nC,move->id,move->color,move->bestNew);
 	}
 	
 	*adj=adjColors;
 	*stopIt=nIt;
-	return bestNc;
+	return nC;
 }
 
 /**
@@ -729,17 +758,30 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
   return move;
 }
 
-oneMove *findRandom1Move(Graph *g,int **adjColors, int numColors, oneMove *move)
+oneMove *findRandomSA1Move(Graph *g,int **adjColors, int numColors, oneMove *move)
 {
-	int id;
-	int newColor;
-	srand((unsigned int)time(NULL));
+	int id,newColor;
+	Node *n;
 	
-	id=rand()%g->numNodes;
+	//Select random node
+	id=(rand()%(g->numNodes-1))+1;
+	while(!isConflicting(g,id,adjColors))
+	{
+		id=(rand()%(g->numNodes-1))+1;	
+	}
+		
+	n=getNodeFromList(id,g->nodesList);
+
+	//Select random color not equal from the current color's node
 	newColor=rand()%numColors;
+	while(newColor==n->color)
+	{
+		newColor=rand()%numColors;
+	}
 
 	move->id=id;
 	move->bestNew=newColor;
+	move->color=n->color;
 	return move;
 }
 
@@ -757,7 +799,7 @@ int moveProfit(int **adjColors, Node *n, int newColor, int numColors)
 	//Sum the loss given by entering in new class color: is the number of 
 	//conflicting nodes that it will be owned
   profit+=adjColors[n->id-1][newColor];
-//   printf("profit[%d(%d)]= +%d\n",n->id,n->color,adjColors[n->id-1][newColor]);
+//   printf("profit[%d(%d)]= +%d\n",n->id,newColor,adjColors[n->id-1][newColor]);
   
 	return profit;
 }
