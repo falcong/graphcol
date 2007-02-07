@@ -31,7 +31,8 @@ int main(int argc, char *argv[])
 	//Reading configuration file
   readConfFile(&nRestart,&maxIt,&fixLong,&propLong);
 	 
-	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
+// 	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
+	doSA(colors,g,verbosity,instFile,maxIt);
 	
   return 0;
 }
@@ -120,23 +121,27 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 void doSA(int colors, Graph *g, int verbosity, char *instFile, int maxIt)
 {
 	int startTime,stopTime,execTime;
+	int startTemp;
 	int result,stopIt;
 	int **adjColors;
 	boolean findmin;
 	
 	adjColors=NULL;
+	startTemp=10;
 
 	colors=greedyColor(g);
 	printf("Greedy Colors:%d\n",colors);
 			
 	findmin=FALSE;
-	while(!findmin)
+// 	while(!findmin)
 	{
 		//Build the random initial solution
 		randomColor(g,colors);
 		
 		startTime=time(NULL);
-		result=findSA(g,colors,&stopIt,&adjColors);
+		
+		result=findSA(g,colors,&stopIt,&adjColors,startTemp);
+		
 		stopTime=time(NULL);
 		execTime=stopTime-startTime;
 			
