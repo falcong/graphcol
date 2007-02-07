@@ -36,7 +36,7 @@ void printDotOut(NodesList *l);
 
 boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adjColors);
 
-int findSA(Graph *g,int colors,int *stopIt,int ***adjColors, int startTemp);
+int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float tempFactor);
 
 void randomColor(Graph *g, int numColors);
 
@@ -56,7 +56,7 @@ void printConflictingNodesList(Graph *g,int **adjColors);
 
 oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors, oneMove *move, int fixLong, float propLong, int nIt, int nC, int bestNc);
 
-oneMove *findRandom1Move(Graph *g,int **adjColors, int numColors, oneMove *move);
+oneMove *findRandomSA1Move(Graph *g,int **adjColors, int numColors, oneMove *moves);
 
 void updateAdjacency(Graph *g, int **adjColors, oneMove *move, int numColors);
 

@@ -121,26 +121,27 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 void doSA(int colors, Graph *g, int verbosity, char *instFile, int maxIt)
 {
 	int startTime,stopTime,execTime;
-	int startTemp;
+	float startTemp,tempFactor;
 	int result,stopIt;
 	int **adjColors;
 	boolean findmin;
 	
 	adjColors=NULL;
-	startTemp=10;
+	startTemp=5;
+	tempFactor=0.9995;
 
 	colors=greedyColor(g);
 	printf("Greedy Colors:%d\n",colors);
 			
 	findmin=FALSE;
-// 	while(!findmin)
+	while(!findmin)
 	{
 		//Build the random initial solution
 		randomColor(g,colors);
 		
 		startTime=time(NULL);
 		
-		result=findSA(g,colors,&stopIt,&adjColors,startTemp);
+		result=findSA(g,colors,&stopIt,&adjColors,startTemp,tempFactor);
 		
 		stopTime=time(NULL);
 		execTime=stopTime-startTime;
@@ -149,7 +150,7 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, int maxIt)
 			printf("Find %d-coloring for the current graph with Simulated Annealing\n",colors);
 		else
 		{
-			printf("\nFailed to find %d-coloring for the current graph Simulated Annealing\n",colors);
+			printf("\nFailed to find %d-coloring for the current graph with Simulated Annealing\n",colors);
 			printf("Remaining %d conflicting nodes\n\n",result);
 			findmin=TRUE;
 		}
