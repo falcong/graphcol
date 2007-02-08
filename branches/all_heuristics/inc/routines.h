@@ -19,7 +19,7 @@ Function that read from the command line the name of the instance file
  */
 void readCommand(int argc,char *argv[],char *instFile, int *colors, int *verbosity);
 
-void readConfFile(int *nRestart, int *maxIt, int *fixLong, float *propLong);
+void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,float *startTemp,float *tempFactor);
 
 
 
@@ -75,4 +75,6 @@ int greedyInitColor(Graph *g,int numColors);
 int getGreedyMaxOrder(Graph *g,pNode *orderNode);
 
 boolean colorAdjFree(Node *n,int color);
+
+int getNodeMaxOrder(Graph *g);
 #endif

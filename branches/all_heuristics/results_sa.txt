@@ -1,0 +1,10 @@
+
+instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	262it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	71	COLORED(C:0)	62sec	261211it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	70	COLORED(C:0)	61sec	288498it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	69	COLORED(C:0)	56sec	287497it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	68	COLORED(C:0)	60sec	304682it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	67	COLORED(C:0)	64sec	316151it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	66	COLORED(C:0)	75sec	330686it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	65	COLORED(C:0)	75sec	344270it	1.50temp	1.00fact
+instances/DSJC500.5.col	(500,125248)	80	FAILED(C:64)	2sec	10947it	1.50temp	0.999000fact
