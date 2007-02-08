@@ -57,7 +57,7 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbos
 
 }
 
-void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong)
+void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,float *startTemp,float *tempFactor)
 {
   FILE *fConf;
   char row[LUNGHEZZA];
@@ -97,6 +97,14 @@ void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong)
                 {
 //                   printf("Prop long:%f\n",*propLong);
                 }
+								else if(sscanf(row,"TEMPSTART %f",startTemp)==1)
+								{
+//                   printf("Start temperature:%f\n",*startTemp);
+								}
+								else if(sscanf(row,"TEMPFACT %f",tempFactor)==1)
+								{
+//                   printf("Decrease temperature factor:%f\n",*tempFactor);
+								}
                 else if(sscanf(row," ")==0)
                 {
                   //empty row
@@ -305,7 +313,7 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   oneMove *move;
   Node *n;
 
-  //Build tabu list,adjacency matrix & 1-move 
+  //Build adjacency matrix & 1-move 
   {
     tabuList = (int **) calloc(sizeof(int *),g->numNodes);
     if(tabuList == NULL)
@@ -410,42 +418,44 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
 int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float tempFactor)
 {
 	int **adjColors;
-	int i,j,nIt,nC,bestNc,profit;
+	int i,j,nIt,nC,bestNc,profit,tempColor;
 	float currentTemp;
 	double exponent,dice;
 	oneMove *move;
 	Node *n;
 	
-	adjColors = (int **) calloc(sizeof(int *),g->numNodes);
-	if(adjColors == NULL)
 	{
-		printf("Not enough memory to allocate adjacency matrix\n");
-		exit(EXIT_MEMORY);
-	}
-		
-	move=(oneMove *) malloc(sizeof(oneMove));
-	if(move == NULL)
-	{
-		printf("Not enough memory to allocate move!\n");
-		exit(EXIT_MEMORY);
-	}
-	
-	for(i=0;i<g->numNodes;i++)
-	{
-		adjColors[i] = (int *) calloc(sizeof(int),numColors);
-		
-		if(adjColors[i] == NULL)
+		adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+		if(adjColors == NULL)
 		{
 			printf("Not enough memory to allocate adjacency matrix\n");
 			exit(EXIT_MEMORY);
 		}
-
-		for(j=0;j<numColors;j++)
+			
+		move=(oneMove *) malloc(sizeof(oneMove));
+		if(move == NULL)
 		{
-			adjColors[i][j]=0;
+			printf("Not enough memory to allocate move!\n");
+			exit(EXIT_MEMORY);
+		}
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			adjColors[i] = (int *) calloc(sizeof(int),numColors);
+			
+			if(adjColors[i] == NULL)
+			{
+				printf("Not enough memory to allocate adjacency matrix\n");
+				exit(EXIT_MEMORY);
+			}
+	
+			for(j=0;j<numColors;j++)
+			{
+				adjColors[i][j]=0;
+			}
 		}
 	}
-		
+	
 	//Init the adjacency matrix with the solution values
 	buildAdjacency(g,adjColors);
 	
@@ -453,60 +463,58 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 	printf("Number of conflicting nodes:%d\n",nC);
 	
 	nIt=0;
-	currentTemp=startTemp;
+ 	currentTemp=startTemp;
 	
-	while(nC > 0 && nIt < 10)
+	while(nC > 0 && currentTemp > 0.001)
 	{
 		nIt++;
+		bestNc=nC;
 		
 		//Generate random move 
 		move=findRandomSA1Move(g,adjColors,numColors,move);
 		
 		n=getNodeFromList(move->id,g->nodesList);
 		
-		//Check if the move is valid
-		profit=moveProfit(adjColors,n,move->bestNew,numColors);
-		printf("profit(%d: %d=>%d):%d ",move->id,move->color,move->bestNew,profit);
+		//Check if the move is valid	
+		n->color=move->bestNew; // Do the move
+		updateAdjacency(g,adjColors,move,numColors); // Update the adjacency matrix
+		nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value
 		
-		if(profit<=0)
-		{	//Downhill move
-			//Do the move
-			printf(" Ok\n");
+		profit=bestNc-nC; // get the profit of the move
+		
+		if(profit>=0)
+		{
+			//Downhill move
+			//The move is already done
+			printf("+ It%7d (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d \n",nIt,nC,move->id,move->color,move->bestNew,bestNc,-nC,profit);
+			continue;
 		}
 		else
-		{	//Uphill move
+		{	
+			//Uphill move
 			dice=fmod(drand48(),2);	
-			exponent=-profit/currentTemp;
-			
-			printf("dice:%.2f < exp(%.2f):%.2f (T:%.2f)?",dice,exponent,exp(exponent),currentTemp);
+			exponent=profit/currentTemp;
 			
 			if(dice<exp(exponent))
 			{
-				printf(" Yes\n");
+				printf("- It%7d (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tOk \n",nIt,nC,move->id,move->color,move->bestNew,bestNc,-nC,profit,dice,exp(exponent),currentTemp);
 			}
 			else
 			{
-				printf(" No\n");
-				continue;
+				tempColor=move->color;
+				
+				move->color=move->bestNew;
+				move->bestNew=tempColor;
+				n->color=tempColor;
+				
+				updateAdjacency(g,adjColors,move,numColors);
+				printf("x It%7d (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tBack \n",nIt,nC,move->id,move->color,move->bestNew,bestNc,-nC,profit,dice,exp(exponent),currentTemp);
+				nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value				
 			}
 		}
-
-		//Do the 1-move
-		move->color=n->color;
-		n->color=move->bestNew;
-		
-// 		printf("It%d\t(conf:%d):\tNode\t%d (%d=>%d)\n",nIt,nC,move->id,move->color,move->bestNew);
-		
-    //Update adjacency matrix
-		updateAdjacency(g,adjColors,move,numColors);
-		
-		//Update the obj function
-		nC=nodesConflicting(g->nodesList,adjColors,numColors);
 		
 		//Update temperature value
 		currentTemp=tempFactor*currentTemp;
-				
-		printf("It%d\t(conf:%d):\tNode\t%d (%d=>%d)\n",nIt,nC,move->id,move->color,move->bestNew);
 	}
 	
 	*adj=adjColors;
@@ -763,6 +771,7 @@ oneMove *findRandomSA1Move(Graph *g,int **adjColors, int numColors, oneMove *mov
 	
 	//Select random node
 	id=(rand()%(g->numNodes-1))+1;
+	//The selected node must be conflicting
 	while(!isConflicting(g,id,adjColors))
 	{
 		id=(rand()%(g->numNodes-1))+1;	
@@ -1028,3 +1037,24 @@ boolean colorAdjFree(Node *n,int color)
 
 	return TRUE;
 }
+
+int getNodeMaxOrder(Graph *g)
+{
+	int max;
+	Node *n;
+	
+	n=firstNodesList(g->nodesList);
+	max=0;
+	
+	while(!endNodesList(n,g->nodesList))
+	{
+		if(n->numAdj > max)
+		{
+			max=n->numAdj;
+		}
+		n=nextNodesList(n);
+	}
+	
+	return max;
+}
+
