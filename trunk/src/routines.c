@@ -355,7 +355,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
   //Init the adjacency matrix with the solution values
   buildAdjacency(g,adjColors);
 	
-	printAdjacency(adjColors,g,numColors);
+// 	printAdjacency(adjColors,g,numColors);
 
   nIt=0;
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
@@ -365,7 +365,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 	
   while(nC > 0 && nIt < endIt)
   {
-		printAdjacency(adjColors,g,numColors);
+// 		printAdjacency(adjColors,g,numColors);
     nIt++;
 		//Find the best 1-move 
     move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt,nC,bestNc);
@@ -403,7 +403,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
-  printAdjacency(adjColors,g,numColors);
+//   printAdjacency(adjColors,g,numColors);
 	*adj=adjColors;
   *stopIt=nIt;
   return bestNc;
@@ -622,7 +622,7 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
           {	//Save the best 1-move
             if((profit=moveProfit(adjColors,n,i,numColors))<best)
             {
-              printf("%d(%d=>%d):%d\n",n->id,n->color,i,profit);
+//               printf("%d(%d=>%d):%d\n",n->id,n->color,i,profit);
               chosen=TRUE;
               best=profit;
               bestMove.id=n->id;
@@ -693,36 +693,37 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 			//thrown enhanced aspiration criterion: first version that work on 
 			//the number of real conflicting nodes lost
       {
-        n=getNodeFromList(id,g->nodesList);
-        tempColor=n->color;
-        n->color=color;
-        updateAdjacencyTabu(g,adjColors,id,tempColor,color,numColors);
-				nC=nodesConflicting(g->nodesList,adjColors,numColors);
-
-        if(nC<bestNc)
-        {
-          n->color=tempColor;
-          updateAdjacencyTabu(g,adjColors,id,color,tempColor,numColors);
-//           printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d!\n",id,color,n->color,nC);
-          return FALSE;
-        }
-        else
-        {
-          n->color=tempColor;
-          updateAdjacencyTabu(g,adjColors,id,color,tempColor,numColors);
-//           printf("Not Find (c:%d), roll back (%d=>%d)!\n",nC,color,n->color);
-          return TRUE; 
-        }
+//         n=getNodeFromList(id,g->nodesList);
+//         tempColor=n->color;
+//         n->color=color;
+//         updateAdjacencyTabu(g,adjColors,id,tempColor,color,numColors);
+// 				nC=nodesConflicting(g->nodesList,adjColors,numColors);
+// 
+//         if(nC<bestNc)
+//         {
+//           n->color=tempColor;
+//           updateAdjacencyTabu(g,adjColors,id,color,tempColor,numColors);
+// //           printf("Activated tabu aspiration criterion:(node %d: %d=>%d)->conflict:%d!\n",id,color,n->color,nC);
+//           return FALSE;
+//         }
+//         else
+//         {
+//           n->color=tempColor;
+//           updateAdjacencyTabu(g,adjColors,id,color,tempColor,numColors);
+// //           printf("Not Find (c:%d), roll back (%d=>%d)!\n",nC,color,n->color);
+//           return TRUE; 
+//         }
       }
 				
 			//thrown enhanced aspiration criterion: second version that work on
 			//the profit and not on the number of real conflicting nodes lost
-			/*
+			
+			//Seem to works better the second implementation
+			
 			{
 				n=getNodeFromList(id,g->nodesList);
 				profit=moveProfit(adjColors,n,color,numColors);
 				if(profit+nC<bestNc)
-// 				if(profit+nC==0)
 				{
 // 					printf("Activated tabu aspiration criterion:(node %d: %d=>%d) -> conflict:%d+%d=%d<%d!\n",id,n->color,color,profit,nC,profit+nC,bestNc);
 					return FALSE; 
@@ -731,7 +732,8 @@ boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int 
 				{
 					return TRUE;
 				}
-			}*/
+			}
+			
 			//       printf("tabu(it%d):id%d(%d)=tabu since %d\n",nIt,id,color,tabuList[id-1][color]);
       return TRUE;
     }
@@ -785,7 +787,7 @@ int greedyColor(Graph *g)
 	for(i=0;i<g->numNodes;i++)
 	{
 		id=getGreedyMaxOrder(g,orderNode);
-		printf("Max:%d\n",id);
+// 		printf("Max:%d\n",id);
 		colored=FALSE;
 		minColor=0;
 		
@@ -837,7 +839,7 @@ int greedyInitColor(Graph *g,int numColors)
 	for(i=0;i<g->numNodes;i++)
 	{
 		id=getGreedyMaxOrder(g,orderNode);
-		printf("%d-",id);
+// 		printf("%d-",id);
 		colored=FALSE;
 		minColor=0;
 		
