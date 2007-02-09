@@ -1,3 +1,4 @@
+INSTANCE	NODE,EDGES	COLORS	RESULT(CONFLICT))	EXECTIME	NIT	STARTTEMP	TEMPFACTOR
 
 instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	262it	1.50temp	1.00fact
 instances/DSJC500.5.col	(500,125248)	71	COLORED(C:0)	62sec	261211it	1.50temp	1.00fact
@@ -7,4 +8,21 @@ instances/DSJC500.5.col	(500,125248)	68	COLORED(C:0)	60sec	304682it	1.50temp	1.0
 instances/DSJC500.5.col	(500,125248)	67	COLORED(C:0)	64sec	316151it	1.50temp	1.00fact
 instances/DSJC500.5.col	(500,125248)	66	COLORED(C:0)	75sec	330686it	1.50temp	1.00fact
 instances/DSJC500.5.col	(500,125248)	65	COLORED(C:0)	75sec	344270it	1.50temp	1.00fact
-instances/DSJC500.5.col	(500,125248)	80	FAILED(C:64)	2sec	10947it	1.50temp	0.999000fact
+instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	552it	1.20temp	0.999900fact
+instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	831it	1.20temp	0.999900fact
+instances/DSJC500.5.col	(500,125248)	60	FAILED(C:50)	251sec	1004214it	3.00temp	0.999000fact
+instances/anna.col	(138,986)	11	COLORED(C:0)	0sec	493it	3.00temp	0.999000fact
+instances/miles1000.col	(128,6432)	42	FAILED(C:4)	62sec	339456it	3.00temp	0.999000fact
+instances/miles1000.col	(128,6432)	42	FAILED(C:4)	58sec	328568it	3.00temp	0.999000fact
+instances/miles1000.col	(128,6432)	43	FAILED(C:78)	1sec	0it	3.00temp	0.999000fact
+instances/miles1000.col	(128,6432)	43	FAILED(C:4)	4sec	10749it	3.00temp	0.999000fact
+instances/miles1000.col	(128,6432)	43	FAILED(C:4)	13sec	59611it	3.00temp	0.999000fact
+instances/miles1000.col	(128,6432)	43	COLORED(C:0)	12sec	71783it	3.00temp	0.999000fact
+instances/miles1000.col	(128,6432)	42	COLORED(C:0)	16sec	81849it	3.00temp	0.999000fact
+instances/DSJC500.5.col	(500,125248)	60	COLORED(C:0)	166sec	636577it	3.50temp	0.999900fact
+instances/DSJC500.5.col	(500,125248)	60	COLORED(C:0)	161sec	577346it	3.50temp	0.999900fact
+instances/DSJC500.5.col	(500,125248)	59	COLORED(C:0)	223sec	739192it	3.50temp	0.999900fact
+instances/DSJC500.5.col	(500,125248)	59	COLORED(C:0)	176sec	646155it	3.50temp	0.999900fact
+instances/DSJC500.5.col	(500,125248)	58	COLORED(C:0)	225sec	802937it	3.50temp	0.999900fact
+instances/DSJC500.5.col	(500,125248)	58	FAILED(C:5)	2239sec	4077084it	3.50temp	0.999900fact
+instances/DSJC500.5.col	(500,125248)	58	COLORED(C:0)	158sec	691751it	3.50temp	0.999900fact

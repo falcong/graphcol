@@ -19,7 +19,7 @@ Function that read from the command line the name of the instance file
  */
 void readCommand(int argc,char *argv[],char *instFile, int *colors, int *verbosity);
 
-void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,float *startTemp,float *tempFactor);
+void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,int *maxItImprove,float *startTemp,float *minTemp,float *tempFactor, int *maxItConstTemp);
 
 
 
@@ -36,7 +36,7 @@ void printDotOut(NodesList *l);
 
 boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adjColors);
 
-int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float tempFactor);
+int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float minTemp,float tempFactor, int maxItImprove, int maxItConstTemp);
 
 void randomColor(Graph *g, int numColors);
 
