@@ -3,7 +3,7 @@
 
 void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int verbosity, char *instFile, int nRestart);
 
-void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, float tempFactor);
+void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, float minTemp, float tempFactor, int maxItImprove, int maxItConstTemp);
 
 void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart);
 
@@ -18,7 +18,8 @@ int main(int argc, char *argv[])
 	int fixLong,maxIt,nRestart;
   float propLong;
 	//Simulated Annealing param
-	float startTemp,tempFactor;	
+	int maxItImprove,maxItConstTemp;
+	float startTemp,minTemp,tempFactor;	
 	
   
 	srand((unsigned int)time(NULL));
@@ -35,13 +36,16 @@ int main(int argc, char *argv[])
 	
 	//Set default Simulated Annealing values
 	startTemp=getNodeMaxOrder(g);
-	tempFactor=0.9999;
-		
+	minTemp=0.01;
+	tempFactor=0.999;
+	maxItImprove=0;
+	maxItConstTemp=100;
+	
 	//Reading configuration file
-  readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&startTemp,&tempFactor);
+  readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&maxItImprove,&startTemp,&minTemp,&tempFactor,&maxItConstTemp);
 	 
 // 	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
-	doSA(colors,g,verbosity,instFile,startTemp,tempFactor);
+	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 	
   return 0;
 }
@@ -127,7 +131,7 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 	}
 }
 
-void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, float tempFactor)
+void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, float minTemp, float tempFactor, int maxItImprove, int maxItConstTemp)
 {
 	int startTime,stopTime,execTime;
 	int result,stopIt;
@@ -151,8 +155,8 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 			randomColor(g,colors);
 			
 			startTime=time(NULL);
-			
-			result=findSA(g,colors,&stopIt,&adjColors,startTemp,tempFactor);
+						
+			result=findSA(g,colors,&stopIt,&adjColors,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 			
 			stopTime=time(NULL);
 			execTime=stopTime-startTime;
@@ -177,7 +181,7 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 			
 		startTime=time(NULL);
 			
-		result=findSA(g,colors,&stopIt,&adjColors,startTemp,tempFactor);
+		result=findSA(g,colors,&stopIt,&adjColors,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 			
 		stopTime=time(NULL);
 		execTime=stopTime-startTime;

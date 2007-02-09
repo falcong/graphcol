@@ -57,7 +57,7 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbos
 
 }
 
-void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,float *startTemp,float *tempFactor)
+void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,int *maxItImprove,float *startTemp,float *minTemp,float *tempFactor, int *maxItConstTemp)
 {
   FILE *fConf;
   char row[LUNGHEZZA];
@@ -97,6 +97,10 @@ void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,float *s
                 {
 //                   printf("Prop long:%f\n",*propLong);
                 }
+								else if(sscanf(row,"TEMPSTOP %f",minTemp)==1)
+								{
+//                   printf("Prop long:%f\n",*propLong);
+								}
 								else if(sscanf(row,"TEMPSTART %f",startTemp)==1)
 								{
 //                   printf("Start temperature:%f\n",*startTemp);
@@ -104,6 +108,14 @@ void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,float *s
 								else if(sscanf(row,"TEMPFACT %f",tempFactor)==1)
 								{
 //                   printf("Decrease temperature factor:%f\n",*tempFactor);
+								}
+								else if(sscanf(row,"ITCONSTTEMP %d",maxItImprove)==1)
+								{
+//                   printf("Iterations at constant temperature:%d\n",*maxItImprove);
+								}
+								else if(sscanf(row,"MAXITCONSTTEMP %d",maxItConstTemp)==1)
+								{
+//                   printf("Max iterations at constant temperature:%d\n",*maxItConstTemp);
 								}
                 else if(sscanf(row," ")==0)
                 {
@@ -415,10 +427,10 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
   return bestNc;
 }
 
-int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float tempFactor)
+int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float minTemp,float tempFactor, int maxItImprove, int maxItConstTemp)
 {
 	int **adjColors;
-	int i,j,nIt,nC,bestNc,profit,tempColor;
+	int i,j,nIt,nC,bestNc,currentNc,profit,tempColor,nItNotChange,inv,currentItImprove;
 	float currentTemp;
 	double exponent,dice;
 	oneMove *move;
@@ -463,58 +475,91 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 	printf("Number of conflicting nodes:%d\n",nC);
 	
 	nIt=0;
+	bestNc=nC;
  	currentTemp=startTemp;
+	currentItImprove=floor(maxItImprove*1/currentTemp);
 	
-	while(nC > 0 && currentTemp > 0.001)
+	printf("max:%d*=%d\n",currentItImprove,inv);
+	
+	//Iterations at decreasing temperature: while there isn't improvement for n
+	//iterations, decrease the temperature value and restart the search
+	while(nC > 0 && currentTemp > minTemp)
 	{
-		nIt++;
-		bestNc=nC;
-		
-		//Generate random move 
-		move=findRandomSA1Move(g,adjColors,numColors,move);
-		
-		n=getNodeFromList(move->id,g->nodesList);
-		
-		//Check if the move is valid	
-		n->color=move->bestNew; // Do the move
-		updateAdjacency(g,adjColors,move,numColors); // Update the adjacency matrix
-		nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value
-		
-		profit=bestNc-nC; // get the profit of the move
-		
-		if(profit>=0)
+		nItNotChange=0;
+		//Iterations at constant temperature: 
+		//while there is an improvement every n iterations
+		while(nC>0 && nItNotChange<currentItImprove)
 		{
-			//Downhill move
-			//The move is already done
-			printf("+ It%7d (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d \n",nIt,nC,move->id,move->color,move->bestNew,bestNc,-nC,profit);
-			continue;
-		}
-		else
-		{	
-			//Uphill move
-			dice=fmod(drand48(),2);	
-			exponent=profit/currentTemp;
+			nIt++;
+			currentNc=nC;
 			
-			if(dice<exp(exponent))
+			//Generate random move 
+			move=findRandomSA1Move(g,adjColors,numColors,move);
+			
+			n=getNodeFromList(move->id,g->nodesList);
+			
+			//Check if the move is valid	
+			n->color=move->bestNew; // Do the move
+			updateAdjacency(g,adjColors,move,numColors); // Update the adjacency matrix
+			nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value
+			
+			profit=currentNc-nC; // get the profit of the move
+			
+			if(profit>=0)
 			{
-				printf("- It%7d (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tOk \n",nIt,nC,move->id,move->color,move->bestNew,bestNc,-nC,profit,dice,exp(exponent),currentTemp);
+				//Downhill move
+				//The move is already done
+				if(profit >0)
+				{
+					printf("+ It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit);
+				}
+				else
+				{
+					printf("= It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit);
+				}
 			}
 			else
-			{
-				tempColor=move->color;
+			{	
+				//Uphill move
+				dice=fmod(drand48(),2);	
+				exponent=profit/currentTemp;
 				
-				move->color=move->bestNew;
-				move->bestNew=tempColor;
-				n->color=tempColor;
-				
-				updateAdjacency(g,adjColors,move,numColors);
-				printf("x It%7d (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tBack \n",nIt,nC,move->id,move->color,move->bestNew,bestNc,-nC,profit,dice,exp(exponent),currentTemp);
-				nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value				
+				if(dice<exp(exponent))
+				{
+					printf("- It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tOk \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit,dice,exp(exponent),currentTemp);
+					
+				}
+				else
+				{
+					tempColor=move->color;
+					
+					move->color=move->bestNew;
+					move->bestNew=tempColor;
+					n->color=tempColor;
+					
+					updateAdjacency(g,adjColors,move,numColors);
+					printf("x It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tBack \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit,dice,exp(exponent),currentTemp);
+					nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value				
+				}
 			}
+		
+			if(nC<bestNc)
+			{
+				bestNc=nC;
+				nItNotChange=0;
+			}
+			else
+				nItNotChange++;
 		}
 		
+		bestNc=nC;
+		printf("\n");
 		//Update temperature value
 		currentTemp=tempFactor*currentTemp;
+		currentItImprove=floor(maxItImprove*1/currentTemp);
+		
+		if(currentItImprove>maxItConstTemp)
+			currentItImprove=maxItConstTemp;
 	}
 	
 	*adj=adjColors;
