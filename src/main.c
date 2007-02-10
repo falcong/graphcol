@@ -7,7 +7,9 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 
 void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart);
 
-void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,int execTime,int stopIt,float startTemp,float tempFactor);
+void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,int execTime,int stopIt,float startTemp,float minTemp, int maxItImprove, int maxItConstTemp, float tempFactor);
+
+void waitEnter(char *message);
 
 int main(int argc, char *argv[])
 {
@@ -21,13 +23,22 @@ int main(int argc, char *argv[])
 	int maxItImprove,maxItConstTemp;
 	float startTemp,minTemp,tempFactor;	
 	
-  
+	printf("---------------------------------------------------\n");
 	srand((unsigned int)time(NULL));
 	//Reading instance file
   readCommand(argc,argv,instFile,&colors,&verbosity);
   //Loading instance file & building graph struct
   g=loadGraph(instFile);
   
+	if(colors==-1)
+	{
+		printf("Colors:\tNot chosen (Find upperbound solution)\n\n");
+	}
+	else
+	{
+		printf("Colors:\t%d\n",colors);
+	}
+	
 	//Set default tabu search values
   maxIt=1000;
   fixLong=g->numNodes/2;
@@ -140,14 +151,21 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 	
 	adjColors=NULL;
 	
-	printf("Parametri SA: temperatura iniziale: %.2f; fattore di riduzione: %.5f\n",startTemp,tempFactor);
+	printf("---------------------------------------------------\n");
+	printf("SA parameters:\nTemperature Range:\t%.2f : %.5f\n",startTemp,minTemp);
+	printf("Decreasing factor:\t%.5f\n",tempFactor);
+	printf("AVG It constant T:\t%d\n",maxItImprove);
+	printf("MAX it constant T:\t%d\n",maxItConstTemp);
+	printf("---------------------------------------------------\n");
+	
+	waitEnter("Press ENTER to start the computation... ");
 	
 	if(colors==-1)
 	{
 		colors=greedyColor(g);
 		
   	printf("Greedy Colors:%d\n",colors);
-				
+
 		findmin=FALSE;
 		while(!findmin)
 		{
@@ -170,15 +188,14 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 				findmin=TRUE;
 			}
 			
-			printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,tempFactor);
+			printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
 			colors--;
 		}
 	}
 	else
 	{
 		//Build the random initial solution
-		randomColor(g,colors);
-			
+		randomColor(g,colors);	
 		startTime=time(NULL);
 			
 		result=findSA(g,colors,&stopIt,&adjColors,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
@@ -195,7 +212,7 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 			findmin=TRUE;
 		}
 			
-		printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,tempFactor);
+		printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
 	}
 }
 
@@ -215,7 +232,6 @@ void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int co
 	}
 	
   fprintf(fResults,"\n%s\t(%d,%d)\t%d\t",instFile,g->numNodes,g->numEdges,colors);
-  
   if(result==0)
     fprintf(fResults,"COLORED(C:%d)\t",result);
   else
@@ -273,7 +289,7 @@ void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int co
 	}
 }
 
-void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,int execTime,int stopIt,float startTemp,float tempFactor)
+void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,int execTime,int stopIt,float startTemp,float minTemp, int maxItImprove, int maxItConstTemp, float tempFactor)
 {
 	FILE *fResults,*fLegalColoring;
 	char solfilename[LUNGHEZZA],filename[LUNGHEZZA];
@@ -293,7 +309,7 @@ void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,i
 	else
 		fprintf(fResults,"FAILED(C:%d)\t",result);
   
-	fprintf(fResults,"%dsec\t%dit\t%.2ftemp\t%.6ffact",execTime,stopIt,startTemp,tempFactor);
+	fprintf(fResults,"%dsec\t%dit\t%.2f : %.5fT\t%.6ffact\t%dit\t%dmax",execTime,stopIt,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 	fclose(fResults);
   
 	switch(type)
@@ -344,3 +360,15 @@ void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,i
 		printf("Not Printing %d-coloring solution for the current graph\n",colors);	
 	}	
 }
+
+void waitEnter(char *message)
+{
+	char c;
+	
+	printf("%s",message);
+	while((c=getchar())!='\n')
+	{
+		printf("%c ",c);
+	}
+}
+
