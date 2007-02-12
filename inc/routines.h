@@ -38,6 +38,8 @@ boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt
 
 int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float minTemp,float tempFactor, int maxItImprove, int maxItConstTemp);
 
+int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj);
+
 void randomColor(Graph *g, int numColors);
 
 void randomConflictingColor(Graph *g, int numColors, int **adjColors);
@@ -77,4 +79,8 @@ int getGreedyMaxOrder(Graph *g,pNode *orderNode);
 boolean colorAdjFree(Node *n,int color);
 
 int getNodeMaxOrder(Graph *g);
+
+void waitEnter(char *message);
+
+void printSeparator();
 #endif
