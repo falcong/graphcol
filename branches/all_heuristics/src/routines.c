@@ -567,6 +567,15 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 	return nC;
 }
 
+int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
+{
+	int result;
+	
+	result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,adj);
+	
+	return result;
+}
+
 /**
 Random color the graph with numColors colors
 */
@@ -1101,5 +1110,21 @@ int getNodeMaxOrder(Graph *g)
 	}
 	
 	return max;
+}
+
+void waitEnter(char *message)
+{
+	char c;
+	
+	printf("%s",message);
+	while((c=getchar())!='\n')
+	{
+		printf("%c ",c);
+	}
+}
+
+void printSeparator()
+{
+	printf("---------------------------------------------------\n");
 }
 

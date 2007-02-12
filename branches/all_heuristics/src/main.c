@@ -9,8 +9,6 @@ void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int co
 
 void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,int execTime,int stopIt,float startTemp,float minTemp, int maxItImprove, int maxItConstTemp, float tempFactor);
 
-void waitEnter(char *message);
-
 int main(int argc, char *argv[])
 {
   char instFile[LUNGHEZZA+1];
@@ -23,7 +21,7 @@ int main(int argc, char *argv[])
 	int maxItImprove,maxItConstTemp;
 	float startTemp,minTemp,tempFactor;	
 	
-	printf("---------------------------------------------------\n");
+	printSeparator();
 	srand((unsigned int)time(NULL));
 	//Reading instance file
   readCommand(argc,argv,instFile,&colors,&verbosity);
@@ -151,20 +149,19 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 	
 	adjColors=NULL;
 	
-	printf("---------------------------------------------------\n");
+	printSeparator();
 	printf("SA parameters:\nTemperature Range:\t%.2f : %.5f\n",startTemp,minTemp);
 	printf("Decreasing factor:\t%.5f\n",tempFactor);
 	printf("AVG It constant T:\t%d\n",maxItImprove);
 	printf("MAX it constant T:\t%d\n",maxItConstTemp);
-	printf("---------------------------------------------------\n");
-	
-	waitEnter("Press ENTER to start the computation... ");
+	printSeparator();
 	
 	if(colors==-1)
 	{
 		colors=greedyColor(g);
 		
-  	printf("Greedy Colors:%d\n",colors);
+  	printf("Greedy upperbound colors:\t%d\n",colors);
+		waitEnter("Press ENTER to start the computation... ");
 
 		findmin=FALSE;
 		while(!findmin)
@@ -190,10 +187,12 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 			
 			printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
 			colors--;
+			waitEnter("Press ENTER to restart the coloring with decreased number of colors... ");
 		}
 	}
 	else
 	{
+		waitEnter("Press ENTER to start the computation... ");
 		//Build the random initial solution
 		randomColor(g,colors);	
 		startTime=time(NULL);
@@ -216,6 +215,79 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 	}
 }
 
+void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float propLong, int maxIt)
+{
+	int startTime,stopTime,execTime;
+	int result,stopIt;
+	int **adjColors;
+	boolean findmin;
+	
+	adjColors=NULL;
+	
+	printSeparator();
+	printf("VNS parameters:\nTabu fixed length:\t%d",fixLong);
+	printf("Tabu proportional length:\t%.2f\n",propLong);
+	printf("Max It:\t%d\n",maxIt);
+	printSeparator();
+	
+	if(colors==-1)
+	{
+		colors=greedyColor(g);
+		
+		printf("Greedy upperbound colors:\t%d\n",colors);
+		waitEnter("Press ENTER to start the computation... ");
+
+		findmin=FALSE;
+		while(!findmin)
+		{
+			//Build the random initial solution
+			randomColor(g,colors);
+			
+			startTime=time(NULL);
+						
+			result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+			
+			stopTime=time(NULL);
+			execTime=stopTime-startTime;
+				
+			if(result==0)
+				printf("Find %d-coloring for the current graph with Variable Neighborhood Search\n",colors);
+			else
+			{
+				printf("\nFailed to find %d-coloring for the current graph with Variable Neighborhood Search\n",colors);
+				printf("Remaining %d conflicting nodes\n\n",result);
+				findmin=TRUE;
+			}
+			
+// 			printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
+			colors--;
+			waitEnter("Press ENTER to restart the coloring with decreased number of colors... ");
+		}
+	}
+	else
+	{
+		waitEnter("Press ENTER to start the computation... ");
+		//Build the random initial solution
+		randomColor(g,colors);	
+		startTime=time(NULL);
+			
+		result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+			
+		stopTime=time(NULL);
+		execTime=stopTime-startTime;
+				
+		if(result==0)
+			printf("Find %d-coloring for the current graph with Variable Neighborhood Search\n",colors);
+		else
+		{
+			printf("\nFailed to find %d-coloring for the current graph with Variable Neighborhood Search\n",colors);
+			printf("Remaining %d conflicting nodes\n\n",result);
+			findmin=TRUE;
+		}
+			
+// 		printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
+	}
+}
 
 void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt, int nRestart)
 {
@@ -309,7 +381,7 @@ void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,i
 	else
 		fprintf(fResults,"FAILED(C:%d)\t",result);
   
-	fprintf(fResults,"%dsec\t%dit\t%.2f : %.5fT\t%.6ffact\t%dit\t%dmax",execTime,stopIt,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
+	fprintf(fResults,"%d\t%d\t%.2f\t%.5f\t%.6f\t%d\t%d",execTime,stopIt,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 	fclose(fResults);
   
 	switch(type)
@@ -361,14 +433,76 @@ void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,i
 	}	
 }
 
-void waitEnter(char *message)
+void printVNSProcessInfo(Graph *g, int type, int result, char *instFile, int colors, int execTime, int maxIt, int fixLong, float propLong, int stopIt)
 {
-	char c;
+  
+	FILE *fResults,*fLegalColoring;
+	char solfilename[LUNGHEZZA],filename[LUNGHEZZA];
+	Node *n;
 	
-	printf("%s",message);
-	while((c=getchar())!='\n')
+	fResults=fopen("results_tabu.txt","a");
+	if(fResults==NULL)
 	{
-		printf("%c ",c);
+		printf("Error in opening results file\n");
+		exit(EXIT_OPENFILE);
+	}
+	
+	fprintf(fResults,"\n%s\t%d\t%d\t%d\t",instFile,g->numNodes,g->numEdges,colors);
+	if(result==0)
+		fprintf(fResults,"COLORED(C:%d)\t",result);
+	else
+		fprintf(fResults,"FAILED(C:%d)\t",result);
+  
+	fprintf(fResults,"%d\t%d\t%d\t%d\t%.2f\t",execTime,stopIt,maxIt,fixLong,propLong);
+	fclose(fResults);
+  
+	switch(type)
+	{
+		case 1: printf("Printing graph image\n");
+		printDotOut(g->nodesList);
+		system("dot out.dot -Tpng > out.png");
+		break;
+		case 2: printf("Printing adjacency list\n");
+		printNodesList(g->nodesList);
+		break;
+		default:break;
+	}
+	
+	if(result==0)
+	{
+		if(sscanf(instFile,"instances/%s.col",filename)!=1)
+		{
+			printf("Error in opening coloring solution file\n");
+			exit(EXIT_OPENFILE);
+		}
+		
+		printf("Printing %d-coloring solution for the current graph: %s(%d).sol\n",colors,filename,colors);
+		
+		sprintf(solfilename,"instances_colored_tabu/%s(%d).sol",filename,colors);
+		
+		fLegalColoring=fopen(solfilename,"w");
+		
+		if(fLegalColoring==NULL)
+		{
+			printf("Error in opening coloring solution file\n");
+			exit(EXIT_OPENFILE);
+		}
+			
+		fprintf(fLegalColoring,"NODES\tCOLOR\n");
+		
+		n=firstNodesList(g->nodesList);
+		while(!endNodesList(n,g->nodesList))
+		{
+			fprintf(fLegalColoring,"%d\t%d\n",n->id,n->color);
+			n=nextNodesList(n);
+		}
+		
+		fclose(fLegalColoring);
+	}	
+	else
+	{
+		printf("Not Printing %d-coloring solution for the current graph\n",colors);	
 	}
 }
+
 
