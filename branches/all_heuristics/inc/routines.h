@@ -40,7 +40,11 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 
 int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj);
 
+void shake(Graph *g,int numColors,int neigh, int **adjColors);
+
 void randomColor(Graph *g, int numColors);
+
+boolean *getConflictingNodes(Graph *g, int numColors, int **adjColors);
 
 void randomConflictingColor(Graph *g, int numColors, int **adjColors);
 
