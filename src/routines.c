@@ -569,12 +569,128 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 
 int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
 {
-	int result;
+	int result,neigh,i,j,nC;
+	int **adjColors;
 	
-	result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,adj);
+	neigh=0;
 	
+	adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+	if(adjColors == NULL)
+	{
+		printf("Not enough memory to allocate adjacency matrix\n");
+		exit(EXIT_MEMORY);
+	}
+	
+	for(i=0;i<g->numNodes;i++)
+	{
+		adjColors[i] = (int *) calloc(sizeof(int),numColors);
+			
+		if(adjColors[i] == NULL)
+		{
+			printf("Not enough memory to allocate adjacency matrix\n");
+			exit(EXIT_MEMORY);
+		}
+	
+		for(j=0;j<numColors;j++)
+		{
+			adjColors[i][j]=0;
+		}
+	}
+	
+	buildAdjacency(g,adjColors);
+	
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	printf("Number of conflicting nodes:%d\n",nC);
+	
+	shake(g,numColors,neigh,adjColors);
+	result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,&adjColors);
+	
+	while(result>0)
+	{
+		shake(g,numColors,neigh,adjColors);
+		result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,&adjColors);
+		
+		neigh++;
+		if (neigh>4)	// Actually i coded only 5 different neighborhood
+			return result;
+	}
+	
+	*adj=adjColors;
 	return result;
 }
+
+
+void shake(Graph *g,int numColors,int neigh, int **adjColors)
+{
+	switch(neigh)
+	{
+/*		case 0:doVNSChain(g,numColors,adjColors);
+					break;
+		case 1:doVNSGrenade(g,numColors,adjColors);
+					break;
+		case 2:doVNSFirework(g,numColors,adjColors);
+					break;
+		case 3:doVNSEmptyRefill(g,numColors,adjColors);
+					break;*/
+		default:randomConflictingColor(g,numColors,adjColors);
+					break;
+	}
+}
+
+/**
+ * Chain neighborhood:
+ * Randomly choose a conflicting node and move it into the best possible other
+ * color class. Then choose at random a new conflicting node and assign to it
+ * the best possible new color (not to change the color of a node more than 
+ * once). 
+*/
+void doVNSChain(Graph *g, int numColors, int **adjColors)
+{
+	int id;
+	boolean *initConflicting;
+	
+	//Get conflicting nodes array	
+	initConflicting=getConflictingNodes(g,numColors,adjColors);
+	
+	//Random choose conflicting node
+	id=(rand()%g->numNodes)+1;
+	while(!isConflicting(g,id,adjColors))
+	{
+		id=(rand()%g->numNodes)+1;
+	}
+
+	
+	
+
+
+}
+
+/**
+ * Grenade neighborhood:
+ * Randomly choose a conflicting node and move it into the best possible other
+ * color class. Move each new conflicting node from the arriving class into the
+ * best possible other color class. This process is repeated with I different
+ * grenade.
+*/
+void doVNSGrenade(Graph *g, int numColors, int **adjColors)
+{}
+
+/**
+ * Firework neighborhood:
+ * Randomly choose a conflicting node and move it into the best possible other
+ * color class. Then consider every nyew conflicting node as a grenade.
+*/
+void doVNSFirework(Graph *g, int numColors, int **adjColors)
+{}
+
+/**
+ * First empty the color class wich contains the largest number of conflicting 
+ * nodes by moving each of its nodes into the best possible other color class, 
+ * then refill the class by successively choosing an equal number of others 
+ * nodes (new conflicting nodes when possible).
+*/
+void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
+{}
 
 /**
 Random color the graph with numColors colors
@@ -595,6 +711,31 @@ void randomColor(Graph *g, int numColors)
     n=nextNodesList(n);
   }
 }
+
+
+boolean *getConflictingNodes(Graph *g, int numColors, int **adjColors)
+{
+	boolean *conflicting;
+	int i;
+	
+	conflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+	if(conflicting == NULL)
+	{
+		printf("Not enough memory to allocate conflicting nodes array\n");
+		exit(EXIT_MEMORY);
+	}
+	 
+	for(i=0;i<g->numNodes;i++)
+	{
+		if(isConflicting(g,i+1,adjColors))
+			conflicting[i]=TRUE;
+		else
+			conflicting[i]=FALSE;
+	}
+	
+	return conflicting;
+}
+
 
 void randomConflictingColor(Graph *g, int numColors, int **adjColors)
 {
@@ -816,6 +957,13 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
     move->bestNew=bestMove.bestNew;
   }
   return move;
+}
+
+oneMove *findBestNodeMove(Graph *g, int **adjColors, int numColors, oneMove *move)
+{
+
+
+
 }
 
 oneMove *findRandomSA1Move(Graph *g,int **adjColors, int numColors, oneMove *move)
