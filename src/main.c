@@ -131,14 +131,14 @@ void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int co
 		exit(EXIT_OPENFILE);
 	}
 	
-  fprintf(fResults,"\n%s\t(%d,%d)\t%d\t",instFile,g->numNodes,g->numEdges,colors);
+  fprintf(fResults,"\n%s\t%d\t%d\t%d\t",instFile,g->numNodes,g->numEdges,colors);
   
   if(result==0)
     fprintf(fResults,"COLORED(C:%d)\t",result);
   else
     fprintf(fResults,"FAILED(C:%d)\t",result);
   
-  fprintf(fResults,"%dsec\t%d/%dit\t%dfix\t%.2fprop\tr:%d",execTime,stopIt,maxIt,fixLong,propLong,nRestart);
+  fprintf(fResults,"%d\t%d\t%d\t%d\t%.2f\t%d",execTime,stopIt,maxIt,fixLong,propLong,nRestart);
   fclose(fResults);
   
   switch(type)
