@@ -245,7 +245,7 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 		colors=greedyColor(g);
 		
 		printf("Greedy upperbound colors:\t%d\n",colors);
-		waitEnter("Press ENTER to start the computation... \n");
+// 		waitEnter("Press ENTER to start the computation... \n");
 
 		findmin=FALSE;
 		while(!findmin)
@@ -280,7 +280,7 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 	}
 	else
 	{
-		waitEnter("Press ENTER to start the computation... \n");
+// 		waitEnter("Press ENTER to start the computation... \n");
 		//Build the random initial solution
 		randomColor(g,colors);	
 		startTime=time(NULL);
