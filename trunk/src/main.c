@@ -62,9 +62,9 @@ int main(int argc, char *argv[])
 	//Reading configuration file
   readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&maxItImprove,&startTemp,&minTemp,&tempFactor,&maxItConstTemp);
 	 
-	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
 // 	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
-// 	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
+// 	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
+	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
 	
   return 0;
 }
@@ -237,7 +237,7 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 	printSeparator();
 	printf("VNS parameters:\nTabu fixed length:\t%d\n",fixLong);
 	printf("Tabu proportional length:\t%.2f\n",propLong);
-	printf("Max It:\t%d\n",maxIt);
+	printf("Max It:\t%d\n",g->numNodes*10);
 	printSeparator();
 	
 	if(colors==-1)
