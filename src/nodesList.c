@@ -126,6 +126,7 @@ void appendNodesList (Node *n, NodesList *l)
  * Function that print to the stdout for each node some properties:
  * -id
  * -color
+ * -number of adjacent nodes
 */
 void printNodesList(NodesList *l)
 {
@@ -141,7 +142,7 @@ void printNodesList(NodesList *l)
 
   while(!endNodesList(n,l))
   {
-    printf("%d(%d) ->",n->id,n->color);
+    printf("%d[c(%d),a(%d)] ->",n->id,n->color,n->numAdj);
     printpNodesList(n->adj);
     n=nextNodesList(n);
   }

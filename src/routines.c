@@ -57,7 +57,7 @@ void readCommand(int argc,char *argv[],char *instFile, int *pcolors, int *verbos
 
 }
 
-void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong)
+void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong,int *maxItImprove,float *startTemp,float *minTemp,float *tempFactor, int *maxItConstTemp)
 {
   FILE *fConf;
   char row[LUNGHEZZA];
@@ -97,6 +97,26 @@ void readConfFile(int *nRestart,int *maxIt,int *fixLong,float *propLong)
                 {
 //                   printf("Prop long:%f\n",*propLong);
                 }
+								else if(sscanf(row,"TEMPSTOP %f",minTemp)==1)
+								{
+//                   printf("Prop long:%f\n",*propLong);
+								}
+								else if(sscanf(row,"TEMPSTART %f",startTemp)==1)
+								{
+//                   printf("Start temperature:%f\n",*startTemp);
+								}
+								else if(sscanf(row,"TEMPFACT %f",tempFactor)==1)
+								{
+//                   printf("Decrease temperature factor:%f\n",*tempFactor);
+								}
+								else if(sscanf(row,"ITCONSTTEMP %d",maxItImprove)==1)
+								{
+//                   printf("Iterations at constant temperature:%d\n",*maxItImprove);
+								}
+								else if(sscanf(row,"MAXITCONSTTEMP %d",maxItConstTemp)==1)
+								{
+//                   printf("Max iterations at constant temperature:%d\n",*maxItConstTemp);
+								}
                 else if(sscanf(row," ")==0)
                 {
                   //empty row
@@ -166,7 +186,7 @@ Graph *loadGraph(char *instFile)
                     printf("Problem Format Wrong!\n");
                     exit(EXIT_WRONGINPUTFORMAT);
                   }
-                  printf("Problem: %s(n:%d, e:%d)\n",format,numNodes,numEdges);
+                  printf("Problem: %s (n:%d, e:%d)\n",format,numNodes,numEdges);
                   //Creazione grafo per l'analisi del problema
                   g=createGraph(numNodes,numEdges);
                   initNodes(numNodes,g);
@@ -301,23 +321,31 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 {
   int **tabuList;
   int **adjColors;
+	int *bestSol;
   int i,j,nIt,nC,bestNc,oldC,tabuT,endIt;
   oneMove *move;
   Node *n;
 
-  //Build tabu list,adjacency matrix & 1-move 
+  //Build adjacency matrix & 1-move 
     tabuList = (int **) calloc(sizeof(int *),g->numNodes);
     if(tabuList == NULL)
 		{
       printf("Not enough memory to allocate tabu list\n");
       exit(EXIT_MEMORY);
     }
-    
+
 		adjColors = (int **) calloc(sizeof(int *),g->numNodes);
 		if(adjColors == NULL)
 		{
-				printf("Not enough memory to allocate adjacency matrix\n");
-				exit(EXIT_MEMORY);
+			printf("Not enough memory to allocate adjacency matrix\n");
+			exit(EXIT_MEMORY);
+		}
+
+		bestSol=(int *)calloc(sizeof(int),g->numNodes);
+		if(bestSol == NULL)
+		{
+			printf("Not enough memory to allocate best solution array\n");
+			exit(EXIT_MEMORY);
 		}
     
     move=(oneMove *) malloc(sizeof(oneMove));
@@ -330,6 +358,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
     for(i=0;i<g->numNodes;i++)
     {
       tabuList[i]= (int *) calloc(sizeof(int),numColors);
+			bestSol[i]=-1;
       
       if(tabuList[i] == NULL)
       {
@@ -360,8 +389,9 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
   nIt=0;
   nC=nodesConflicting(g->nodesList,adjColors,numColors);
 	bestNc=nC;
-  printf("Number of conflicting nodes:%d\n",nC);
+//   printf("Number of conflicting nodes:%d\n",nC);
 	endIt=maxIt;
+	saveBestSolution(g,numColors,bestSol);
 	
   while(nC > 0 && nIt < endIt)
   {
@@ -371,7 +401,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
     move=findBest1Move(g,adjColors,tabuList,numColors,move,fixLong,propLong,nIt,nC,bestNc);
     if(move->id==-1)
     {
-      printf("It%d\t(conf:%d):\tNo available moves!\tSkip to next iteration!\n",nIt,nC);
+//       printf("It%d\t(conf:%d):\tNo available moves!\tSkip to next iteration!\n",nIt,nC);
       continue;
     }
 		
@@ -390,6 +420,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 		{
 			bestNc=nC;
 			endIt=nIt+maxIt;
+			saveBestSolution(g,numColors,bestSol);
 		}
 		
 		if(nC==1)
@@ -400,13 +431,1042 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 			exit(EXIT_INCONSISTENCY);
 		}
 				
-		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
+// 		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d (%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
 //   printAdjacency(adjColors,g,numColors);
+	
+	for(i=0;i<g->numNodes;i++)
+		for(j=0;j<numColors;j++)
+			adjColors[i][j]=0;
+	
+	loadBestSolution(g,numColors,bestSol);
+	buildAdjacency(g,adjColors);
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+// 	printf("Loaded best solution: c%d\n",nC);
+	
+// 	printAdjacency(adjColors,g,numColors);
+	
 	*adj=adjColors;
   *stopIt=nIt;
-  return bestNc;
+  return nC; // Return the current number of conflicting nodes
+}
+
+void saveBestSolution(Graph *g,int numColors,int *bestSol)
+{
+	Node *n;
+	
+// 	printf("Saving best solution: ");
+	n=firstNodesList(g->nodesList);
+	
+	while(!endNodesList(n,g->nodesList))
+	{
+// 		printf("%d ",n->id);
+		bestSol[n->id-1]=n->color;	
+		n=nextNodesList(n);
+	}
+}
+
+void loadBestSolution(Graph *g,int numColors,int *bestSol)
+{
+	Node *n;
+	
+// 	printf("Loading best solution\n");
+	n=firstNodesList(g->nodesList);
+	
+	while(!endNodesList(n,g->nodesList))
+	{
+		n->color=bestSol[n->id-1];
+		n=nextNodesList(n);
+	}
+}
+
+int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float minTemp,float tempFactor, int maxItImprove, int maxItConstTemp)
+{
+	int **adjColors;
+	int i,j,nIt,nC,bestNc,currentNc,profit,tempColor,nItNotChange,inv,currentItImprove;
+	float currentTemp;
+	double exponent,dice;
+	oneMove *move;
+	Node *n;
+	
+	{
+		adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+		if(adjColors == NULL)
+		{
+			printf("Not enough memory to allocate adjacency matrix\n");
+			exit(EXIT_MEMORY);
+		}
+			
+		move=(oneMove *) malloc(sizeof(oneMove));
+		if(move == NULL)
+		{
+			printf("Not enough memory to allocate move!\n");
+			exit(EXIT_MEMORY);
+		}
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			adjColors[i] = (int *) calloc(sizeof(int),numColors);
+			
+			if(adjColors[i] == NULL)
+			{
+				printf("Not enough memory to allocate adjacency matrix\n");
+				exit(EXIT_MEMORY);
+			}
+	
+			for(j=0;j<numColors;j++)
+			{
+				adjColors[i][j]=0;
+			}
+		}
+	}
+	
+	//Init the adjacency matrix with the solution values
+	buildAdjacency(g,adjColors);
+	
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	printf("Number of conflicting nodes:%d\n",nC);
+	
+	inv=0;
+	nIt=0;
+	bestNc=nC;
+ 	currentTemp=startTemp;
+	currentItImprove=floor(maxItImprove*1/currentTemp);
+	
+// 	printf("max:%d*=%d\n",currentItImprove,inv);
+	
+	//Iterations at decreasing temperature: while there isn't improvement for n
+	//iterations, decrease the temperature value and restart the search
+	while(nC > 0 && currentTemp > minTemp)
+	{
+		nItNotChange=0;
+		//Iterations at constant temperature: 
+		//while there is an improvement every n iterations
+		while(nC>0 && nItNotChange<currentItImprove)
+		{
+			nIt++;
+			currentNc=nC;
+			
+			//Generate random move 
+			move=findRandomSA1Move(g,adjColors,numColors,move);
+			
+			n=getNodeFromList(move->id,g->nodesList);
+			
+			//Check if the move is valid	
+			n->color=move->bestNew; // Do the move
+			updateAdjacency(g,adjColors,move,numColors); // Update the adjacency matrix
+			nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value
+			
+			profit=currentNc-nC; // get the profit of the move
+			
+			if(profit>=0)
+			{
+				//Downhill move
+				//The move is already done
+				if(profit >0)
+				{
+					printf("+ It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit);
+				}
+				else
+				{
+					printf("= It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit);
+				}
+			}
+			else
+			{	
+				//Uphill move
+				dice=fmod(drand48(),2);	
+				exponent=profit/currentTemp;
+				
+				if(dice<exp(exponent))
+				{
+					printf("- It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tOk \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit,dice,exp(exponent),currentTemp);
+					
+				}
+				else
+				{
+					tempColor=move->color;
+					
+					move->color=move->bestNew;
+					move->bestNew=tempColor;
+					n->color=tempColor;
+					
+					updateAdjacency(g,adjColors,move,numColors);
+					printf("x It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tBack \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit,dice,exp(exponent),currentTemp);
+					nC=nodesConflicting(g->nodesList,adjColors,numColors); // get new f. obj value				
+				}
+			}
+		
+			if(nC<bestNc)
+			{
+				bestNc=nC;
+				nItNotChange=0;
+			}
+			else
+				nItNotChange++;
+		}
+		
+		bestNc=nC;
+		printf("\n");
+		//Update temperature value
+		currentTemp=tempFactor*currentTemp;
+		currentItImprove=floor(maxItImprove*1/currentTemp);
+		
+		if(currentItImprove>maxItConstTemp)
+			currentItImprove=maxItConstTemp;
+	}
+	
+	*adj=adjColors;
+	*stopIt=nIt;
+	return nC;
+}
+
+int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
+{
+	int result,neigh,i,j,nC,iVns,bestResult;
+	int **adjColors;
+	
+	neigh=0;
+	iVns=0;
+	adjColors=NULL;
+	
+	{
+		adjColors = (int **) calloc(sizeof(int *),g->numNodes);
+		if(adjColors == NULL)
+		{
+			printf("Not enough memory to allocate adjacency matrix\n");
+			exit(EXIT_MEMORY);
+		}
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			adjColors[i] = (int *) calloc(sizeof(int),numColors);
+				
+			if(adjColors[i] == NULL)
+			{
+				printf("Not enough memory to allocate adjacency matrix\n");
+				exit(EXIT_MEMORY);
+			}
+		
+			for(j=0;j<numColors;j++)
+			{
+				adjColors[i][j]=0;
+			}
+		}
+	}
+	
+	buildAdjacency(g,adjColors);
+	
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	result=nC;
+	bestResult=result;
+	printf("Number of conflicting nodes:%d\n",nC);
+	
+	while(result>0 && iVns < g->numNodes)
+	{
+		printf("VNS: Shaking the solution...\n");
+		shake(g,numColors,neigh,adjColors,iVns);
+		printf("VNS: Tabu descent...\n");
+		result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,&adjColors);
+		printf("VNS: it%4d (BEST tabu:%d,global:%d) neigh:%d\n",iVns,result,bestResult,neigh);
+		
+		if(result<bestResult)
+		{
+			//Reset the iterations count if the current result is better than best
+			bestResult=result;
+			iVns=0;
+			neigh=0;
+		}
+		else
+		{
+// 			printf("\t%d/5 = %d -> %d mod %d = %d",g->numNodes,g->numNodes/5,iVns,g->numNodes/5,iVns%((g->numNodes/5)));
+			if(iVns%((g->numNodes/5))==0)
+			{
+				neigh++;
+// 				printf("\tIncreased neighborhood:%d->%d",neigh-1,neigh);
+			}
+		}
+		iVns++;
+	}
+	
+	
+	*adj=adjColors;
+	return result;
+}
+
+void shake(Graph *g,int numColors,int neigh, int **adjColors, int iVns)
+{
+	switch(neigh)
+	{
+		case 0:doVNSChain(g,numColors,adjColors,iVns);
+					break;
+		case 1:doVNSGrenade(g,numColors,adjColors,iVns);
+					break;
+		case 2:doVNSFirework(g,numColors,adjColors,iVns);
+					break;
+		case 3:doVNSEmptyRefill(g,numColors,adjColors);
+					break;
+		default:randomConflictingColor(g,numColors,adjColors);
+					break;
+	}
+	
+// 	printf("\n");
+}
+
+/**
+ * Chain neighborhood:
+ * Randomly choose a conflicting node and move it into the best possible other
+ * color class. Then choose at random a new conflicting node and assign to it
+ * the best possible new color (not to change the color of a node more than 
+ * once). 
+*/
+void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
+{
+	int i,id,stopIt,maxIt,delta,it,newConf,nextClass,nC;
+	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
+	float d;
+	oneMove *move;
+	Node *n;
+	
+	{
+		move=(oneMove *) malloc(sizeof(oneMove));
+		if(move == NULL)
+		{
+			printf("Not enough memory to allocate move!\n");
+			exit(EXIT_MEMORY);
+		}
+		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(preConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(postConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(newConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(blacklist == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			preConflicting[i]=FALSE;
+			postConflicting[i]=FALSE;
+			newConflicting[i]=FALSE;
+			blacklist[i]=FALSE;
+		}
+	}
+
+	d=(double)(iVns*5)/g->numNodes;
+	delta=floor(15*d);
+	maxIt=20-delta;
+	stopIt=(rand()%maxIt)+1;
+	nextClass=-1;
+	
+	//Get conflicting nodes array	
+	preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	printf("VNS: CHAIN C:%d for %d (1..%d)\n",nC,stopIt,maxIt);
+	
+	for(it=0;it<stopIt;it++)
+	{	
+		//Reset history informations
+		nextClass=-1;	
+		for(i=0;i<g->numNodes;i++)
+		{
+			blacklist[i]=FALSE;
+		}
+	
+		//Random choose conflicting node
+		id=getRandomChainNode(g,adjColors,nextClass,preConflicting,nC,numColors,blacklist);
+		
+		if(id==-1)
+		{
+			return;
+		}
+		
+		//Get best move for the current node
+		move=findBestNodeMove(g,id,adjColors,numColors,move);
+		
+		//Do the move
+		n=getNodeFromList(id,g->nodesList);
+		n->color=move->bestNew;
+		nextClass=n->color;
+		blacklist[n->id-1]=TRUE;
+		
+		//Update the adjacency matrix
+		updateAdjacency(g,adjColors,move,numColors);
+			
+		//Get current conflicting nodes array
+		postConflicting=getConflictingNodes(g,numColors,adjColors,postConflicting);
+		
+		//Get only new conflicting nodes
+		newConflicting=getOnlyNewConflictingNodes(preConflicting,postConflicting,g->numNodes,newConflicting);
+		newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+
+		//Get conflicting nodes array	
+		preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+		nC=nodesConflicting(g->nodesList,adjColors,numColors);
+
+		if(nC==0)
+			return;
+		
+// 		printf("\tVNS CHAIN: it %2d (%d:%d->%d) conf: %dnew /%dtotal\n",it,move->id,move->color,move->bestNew,newConf,nC);
+		printf("(it%2d,C:%3d)%3d ->%3d",it,nC,move->color,move->bestNew);
+		
+		if(newConf>0)
+		{
+			printf(" (%2d) --",newConf);
+			chainUpdate(g,adjColors,move,numColors,newConflicting,blacklist);
+			preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+			nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		}
+		
+		printf("\n");
+	}
+}
+
+void chainUpdate(Graph *g, int **adjColors,oneMove *move,int numColors,boolean *newConflicting,boolean *blacklist)
+{
+	int newConf,id,i;
+	Node *n;
+	boolean *preConflicting,*postConflicting;
+	preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+	
+	{
+		if(preConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(postConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		for(i=0;i<g->numNodes;i++)
+		{
+			preConflicting[i]=FALSE;
+			postConflicting[i]=FALSE;
+		}
+	}
+	
+	newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+	preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+	
+	while(newConf>0)
+	{
+		//Get random node from only new conflicting move->bestNew colored node 
+		id=getRandomChainNode(g,adjColors,move->bestNew,newConflicting,newConf,numColors,blacklist);
+		
+		if(id==-1)
+		{
+			return;
+		}
+		
+		//Find bestNodeMove
+		move=findBestNodeMove(g,id,adjColors,numColors,move);
+		
+		//Do the move
+		n=getNodeFromList(id,g->nodesList);
+		n->color=move->bestNew;
+		blacklist[n->id-1]=TRUE;
+	
+		//Update the adjacency matrix
+		updateAdjacency(g,adjColors,move,numColors);
+	
+		//Get current conflicting nodes array
+		postConflicting=getConflictingNodes(g,numColors,adjColors,postConflicting);
+		
+		//Get only new conflicting nodes
+		newConflicting=getOnlyNewConflictingNodes(preConflicting,postConflicting,g->numNodes,newConflicting);
+		newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+		
+		//Get conflicting nodes array	
+		preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+// 		nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		
+// 		printf("\t\tVNS UPDATE CHAIN: (%d:%d->%d) conf: %dnew\n",move->id,move->color,move->bestNew,newConf);
+		printf("->%3d ",move->bestNew);
+		newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+	}
+}
+
+/**
+ * Advanced method to get a random conflicting node:
+ * If nextClass color class is defined, then it returns a random conflicting 
+ * node that isn't blacklisted and is colored with nextClass color.
+ * If nextClass color class isn't defined, then it returns a random conflicting
+ * node that isn't blacklisted with undefined color. This part require the
+ * number of conflicting nodes of any color.
+ * If there aren't available conflicting and not blacklisted nodes it returns
+ * -1 code.
+ * NB. The method require a conflicting array that defines which conflicting 
+ * nodes to consider.
+*/
+int getRandomChainNode(Graph *g,int **adjColors,int nextClass,boolean *conflicting,int nC,int numColors,boolean *blacklist)
+{
+	int nth,i,j,cc;
+	Node *n;
+	
+	j=0;
+	
+	//Color class defined
+	if(nextClass!=-1)
+	{	
+		//Count conflicting nodes in nextClass color class
+		cc=countColorConflicting(g,numColors,nextClass,conflicting,blacklist);
+		if(cc>0)
+		{	//If exist conflicting nodes in nextClass color class
+			nth=(rand()%cc);
+			for(i=0;i<g->numNodes;i++)
+			{	//Scan all nodes
+				if(blacklist[i]==FALSE)
+				{	//If node isn't blacklisted
+					if(conflicting[i]==TRUE)
+					{	//If node is conflicting
+						n=getNodeFromList(i+1,g->nodesList);
+						if(n->color==nextClass)
+						{	//If its color is the same of nextClass
+							if(j==nth)
+								return i+1; //If the node is the nth
+							else
+								j++; //Try next node
+						}
+					}
+				}
+			}
+		}
+		else
+		{ //If doesn't exist conflicting nodes in nextClass color class then try to
+			//find a conflicting nodes with undefined color
+			nextClass=-1;
+		}
+	}
+	//If the search end with unsuccess then try to find both conflicting and not
+	//blacklisted node with undefined color
+	
+	j=0;
+	//Color class not defined
+	if(nextClass==-1)
+	{
+		nth=(rand()%nC);
+		for(i=0;i<g->numNodes;i++)
+		{	
+			if(blacklist[i]==FALSE)
+			{	
+				if(conflicting[i]==TRUE)
+				{
+					if(j==nth)
+						return i+1;
+					else
+						j++;
+				}
+			}
+		}
+	}
+	//There aren't available nodes return to the caller that the chain can't 
+	//continue
+	return -1;	
+}
+
+/**
+ * Return the number of conflicting nodes that are colored with a certain color
+ * and that aren't blacklisted.
+ * This method require a nodes array that defines what nodes to consider
+*/
+int countColorConflicting(Graph *g,int numColors,int color,boolean *conflicting,boolean *blacklist)
+{
+	int count;
+	Node *n;
+	
+	count=0;
+	
+	n=firstNodesList(g->nodesList);
+	while(!endNodesList(n,g->nodesList))
+	{
+		if(blacklist[n->id-1]==FALSE) //A node must to not be blacklisted 
+		{
+			if(conflicting[n->id-1]==TRUE) //A node must to be conflicting
+			{
+				if(n->color==color) //A node must to be colored with a certain color
+					count++;
+			}
+		}
+		n=nextNodesList(n);
+	}
+	return count;	//Number of conflicting nodes in a certain color class
+}
+
+/**
+ * Grenade neighborhood:
+ * Randomly choose a conflicting node and move it into the best possible other
+ * color class. Move each new conflicting node from the arriving class into the
+ * best possible other color class. This process is repeated with I different
+ * grenade.
+*/
+void doVNSGrenade(Graph *g, int numColors, int **adjColors, int iVns)
+{
+	int i,id,stopIt,maxIt,delta,it,newConf,nextClass,nC;
+	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
+	float d;
+	oneMove *move;
+	Node *n;
+	
+	{
+		move=(oneMove *) malloc(sizeof(oneMove));
+		if(move == NULL)
+		{
+			printf("Not enough memory to allocate move!\n");
+			exit(EXIT_MEMORY);
+		}
+		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(preConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(postConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(newConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(blacklist == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			preConflicting[i]=FALSE;
+			postConflicting[i]=FALSE;
+			newConflicting[i]=FALSE;
+			blacklist[i]=FALSE;
+		}
+	}
+
+	d=(double)((iVns-(g->numNodes/5))*5)/g->numNodes;
+	delta=floor(39*d);
+	maxIt=40-delta;
+	stopIt=(rand()%maxIt)+1;
+	nextClass=-1;
+	
+	//Get conflicting nodes array	
+	preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	printf("VNS: GRENADE C:%d for %d (1..%d)\n",nC,stopIt,maxIt);
+	
+	for(it=0;it<stopIt;it++)
+	{	
+		//Random choose conflicting node
+		id=getRandomChainNode(g,adjColors,-1,preConflicting,nC,numColors,blacklist);
+		
+		if(id==-1)
+		{ //There isn't available nodes
+			return;
+		}
+		
+		//Get best move for the current node
+		move=findBestNodeMove(g,id,adjColors,numColors,move);
+		
+		//Do the move
+		n=getNodeFromList(id,g->nodesList);
+		n->color=move->bestNew;
+		
+		//Update the adjacency matrix
+		updateAdjacency(g,adjColors,move,numColors);
+			
+		//Get current conflicting nodes array
+		postConflicting=getConflictingNodes(g,numColors,adjColors,postConflicting);
+		
+		//Get only new conflicting nodes
+		newConflicting=getOnlyNewConflictingNodes(preConflicting,postConflicting,g->numNodes,newConflicting);
+		newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+				
+		//Get conflicting nodes array	
+		preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+		nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		
+		if(nC==0)
+			return;
+		
+		printf("(it%2d,C:%3d) %3d ->%3d",it,nC,move->color,move->bestNew);
+		
+		if(newConf>0)
+		{
+			printf(" (%2d) --*",newConf);
+			grenadeUpdate(g,adjColors,move,numColors,newConflicting,blacklist);
+			preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+			nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		}
+		printf("\n");
+	}
+}
+
+void grenadeUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean *newConflicting,boolean *blacklist)
+{
+	int i;
+	Node *n;
+		
+	for(i=0;i<g->numNodes;i++)
+	{
+		if(newConflicting[i]==TRUE)
+		{
+			move=findBestNodeMove(g,i+1,adjColors,numColors,move);
+			
+			//Do the move
+			n=getNodeFromList(i+1,g->nodesList);
+			n->color=move->bestNew;
+			
+			printf("%2d ->%2d; ",move->color,move->bestNew);
+		
+			//Update the adjacency matrix
+			updateAdjacency(g,adjColors,move,numColors);
+		}
+	}
+}
+
+/**
+ * Firework neighborhood:
+ * Randomly choose a conflicting node and move it into the best possible other
+ * color class. Then consider every nyew conflicting node as a grenade.
+*/
+void doVNSFirework(Graph *g, int numColors, int **adjColors, int iVns)
+{
+	int i,id,stopIt,maxIt,delta,it,newConf,nC;
+	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
+	float d;
+	oneMove *move;
+	Node *n;
+	
+	{
+		move=(oneMove *) malloc(sizeof(oneMove));
+		if(move == NULL)
+		{
+			printf("Not enough memory to allocate move!\n");
+			exit(EXIT_MEMORY);
+		}
+		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(preConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(postConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(newConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(blacklist == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			preConflicting[i]=FALSE;
+			postConflicting[i]=FALSE;
+			newConflicting[i]=FALSE;
+			blacklist[i]=FALSE;
+		}
+	}
+
+	d=(double)((iVns-(2*g->numNodes/5))*5)/g->numNodes;
+	delta=floor(29*d);
+	maxIt=30-delta;
+	stopIt=(rand()%maxIt)+1;
+	
+	//Get conflicting nodes array	
+	preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	printf("VNS: FIREWORK C:%d for %d (1..%d)\n",nC,stopIt,maxIt);
+	
+	for(it=0;it<stopIt;it++)
+	{	
+		//Random choose conflicting node
+		id=getRandomChainNode(g,adjColors,-1,preConflicting,nC,numColors,blacklist);
+		
+		if(id==-1)
+		{ //There isn't available nodes
+			printf("Return NO AVAILABLE, Conflicts:%d\n",nC);
+			return;
+		}
+		
+		//Get best move for the current node
+		move=findBestNodeMove(g,id,adjColors,numColors,move);
+		
+		//Do the move
+		n=getNodeFromList(id,g->nodesList);
+		n->color=move->bestNew;
+		
+		//Update the adjacency matrix
+		updateAdjacency(g,adjColors,move,numColors);
+			
+		//Get current conflicting nodes array
+		postConflicting=getConflictingNodes(g,numColors,adjColors,postConflicting);
+		
+		//Get only new conflicting nodes
+		newConflicting=getOnlyNewConflictingNodes(preConflicting,postConflicting,g->numNodes,newConflicting);
+		newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+				
+		//Get conflicting nodes array	
+		preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+		nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		
+		if(nC==0)
+		{
+			return;
+		}
+			
+		printf("(it%2d,C:%3d) %2d ->%2d",it,nC,move->color,move->bestNew);
+		
+		if(newConf>0)
+		{
+			printf(" (%2d) --*",newConf);
+			fireworkUpdate(g,adjColors,move,numColors,newConflicting,blacklist,newConf,preConflicting,postConflicting);
+			preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+			nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		}
+		else
+		{
+			printf("\n");
+		}
+	}
+}
+
+void fireworkUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean *grenadesConflicting,boolean *blacklist,int newConf,boolean *preConflicting, boolean *postConflicting)
+{
+	int i,id,nC,nG;
+	boolean *newConflicting;
+	Node *n;
+	
+	newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+	if(newConflicting == NULL)
+	{
+		printf("Not enough memory to allocate conflicting nodes array\n");
+		exit(EXIT_MEMORY);
+	}		
+	for(i=0;i<g->numNodes;i++)
+	{
+		newConflicting[i]=FALSE;
+	}
+	
+	nG=0;
+	for(i=0;i<g->numNodes;i++)
+	{
+		if(grenadesConflicting[i]==TRUE)
+		{
+			id=i+1;	
+			//Get best move for the current node
+			move=findBestNodeMove(g,id,adjColors,numColors,move);
+		
+			//Do the move
+			n=getNodeFromList(id,g->nodesList);
+			n->color=move->bestNew;
+		
+			//Update the adjacency matrix
+			updateAdjacency(g,adjColors,move,numColors);
+			
+			//Get current conflicting nodes array
+			postConflicting=getConflictingNodes(g,numColors,adjColors,postConflicting);
+		
+			//Get only new conflicting nodes
+			newConflicting=getOnlyNewConflictingNodes(preConflicting,postConflicting,g->numNodes,newConflicting);
+			newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+				
+			//Get conflicting nodes array	
+			preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+			nC=nodesConflicting(g->nodesList,adjColors,numColors);
+		
+			if(nC==0)
+				return;
+			
+			if(nG==0)
+				printf("\tGRENADE-%2d: %2d ->%2d",nG+1,move->color,move->bestNew);
+			else
+				printf("\t\t\t\tGRENADE-%2d: %2d ->%2d",nG+1,move->color,move->bestNew);
+		
+			if(newConf>0)
+			{
+				printf(" (%2d) --*",newConf);
+				grenadeUpdate(g,adjColors,move,numColors,newConflicting,blacklist);
+				preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+				nC=nodesConflicting(g->nodesList,adjColors,numColors);
+			}
+			
+			nG++;
+			printf("\n");
+		}
+	}
+}
+
+/**
+ * First empty the color class wich contains the largest number of conflicting 
+ * nodes by moving each of its nodes into the best possible other color class, 
+ * then refill the class by successively choosing an equal number of others 
+ * nodes (new conflicting nodes when possible).
+*/
+void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
+{
+	int nC,i,maxColor,maxConflict,cC,newConf;
+	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
+	Node *n;
+	oneMove *move;
+		
+	{
+		move=(oneMove *) malloc(sizeof(oneMove));
+		if(move == NULL)
+		{
+			printf("Not enough memory to allocate move!\n");
+			exit(EXIT_MEMORY);
+		}
+		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(preConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(postConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(newConflicting == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
+		if(blacklist == NULL)
+		{
+			printf("Not enough memory to allocate conflicting nodes array\n");
+			exit(EXIT_MEMORY);
+		}
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			preConflicting[i]=FALSE;
+			postConflicting[i]=FALSE;
+			newConflicting[i]=FALSE;
+			blacklist[i]=FALSE;
+		}
+	}
+	
+	preConflicting=getConflictingNodes(g,numColors,adjColors,preConflicting);
+	nC=nodesConflicting(g->nodesList,adjColors,numColors);
+	
+	maxColor=-1;
+	maxConflict=-1;
+	
+	//Find the color class with largest number of conflicting nodes
+	for(i=0;i<numColors;i++)
+	{
+		cC=countColorConflicting(g,numColors,i,preConflicting,blacklist);
+		
+		if(cC>maxConflict)
+		{
+			maxColor=i;
+			maxConflict=cC;
+		}
+	}
+	
+// 	printf("VNS EMPTY-REFILL: Color class %d with largest number of conflicting nodes: %d\n",maxColor,maxConflict);
+// 	printAdjacency(adjColors,g,numColors);
+	
+	//Empty the color class
+	n=firstNodesList(g->nodesList);
+	while(!endNodesList(n,g->nodesList))
+	{		
+		if(n->color==maxColor)
+		{
+			//Get best move for the current node
+			move=findBestNodeMove(g,n->id,adjColors,numColors,move);
+	
+			//Do the move
+			n->color=move->bestNew;
+		
+			//Update the adjacency matrix
+			updateAdjacency(g,adjColors,move,numColors);
+			
+			nC=nodesConflicting(g->nodesList,adjColors,numColors);
+
+			if(nC==0)
+				return;
+		}
+		
+		n=nextNodesList(n);
+	}
+	
+// 	printf("VNS: EMPTY-REFILL: Emptying Color class %d (%d->0)\n",maxColor,maxConflict);
+// 	printAdjacency(adjColors,g,numColors);
+	
+	postConflicting=getConflictingNodes(g,numColors,adjColors,postConflicting);
+	
+	newConflicting=getOnlyNewConflictingNodes(preConflicting,postConflicting,g->numNodes,newConflicting);
+	newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
+
+	if(newConf>0)
+	{
+		printf("VNS: EMPTY-REFILL: New conflicts: %2d->%2d emptying class %d\n",maxConflict,newConf,maxColor);
+		
+		for(i=0;i<g->numNodes;i++)
+		{
+			if(newConflicting[i]==TRUE)
+			{
+				move=findBestNodeMove(g,i+1,adjColors,numColors,move);
+			
+			  //Do the move
+				n=getNodeFromList(i+1,g->nodesList);
+				n->color=move->bestNew;
+			
+				printf("n:%2d updating (%2d ->%2d)\n",move->id,move->color,move->bestNew);
+		
+			  //Update the adjacency matrix
+				updateAdjacency(g,adjColors,move,numColors);
+				
+				nC=nodesConflicting(g->nodesList,adjColors,numColors);
+
+				if(nC==0)
+					return;
+			}
+		}
+	}
+// 	printAdjacency(adjColors,g,numColors);
+	
 }
 
 /**
@@ -429,6 +1489,59 @@ void randomColor(Graph *g, int numColors)
   }
 }
 
+boolean *getConflictingNodes(Graph *g, int numColors, int **adjColors, boolean *conflicting)
+{
+	int i;
+	 
+	for(i=0;i<g->numNodes;i++)
+	{
+		if(isConflicting(g,i+1,adjColors))
+		{
+			conflicting[i]=TRUE;
+// 			printf("c%d ",i+1);
+		}
+		else
+		{
+			conflicting[i]=FALSE;
+		}
+	}
+	
+	return conflicting;
+}
+
+boolean *getOnlyNewConflictingNodes(boolean *preConflicting,boolean *postConflicting,int numNodes,boolean *conflicting)
+{
+	int i;
+
+	for(i=0;i<numNodes;i++)
+	{
+		if(preConflicting[i]==FALSE && postConflicting[i]==TRUE)
+		{
+			conflicting[i]=TRUE;
+// 			printf("n%d ",i+1);
+		}
+		else
+		{
+			conflicting[i]=FALSE;
+		}
+	}
+	return conflicting;
+}
+
+int countOnlyNewConflictingNodes(boolean *newConflicting, int numNodes)
+{
+	int i,count;
+	
+	count=0;
+	for(i=0;i<numNodes;i++)
+	{
+		if(newConflicting[i]==TRUE)
+			count++;
+	}
+	
+	return count;
+}
+
 void randomConflictingColor(Graph *g, int numColors, int **adjColors)
 {
 	Node *n;
@@ -436,7 +1549,7 @@ void randomConflictingColor(Graph *g, int numColors, int **adjColors)
   
 	n=firstNodesList(g->nodesList);
   
-	printf("Random coloring the conflicting nodes graph\n");
+// 	printf("Random coloring the conflicting nodes graph\n");
   
 	while(!endNodesList(n,g->nodesList))
 	{
@@ -651,6 +1764,62 @@ oneMove *findBest1Move(Graph *g, int **adjColors, int **tabuList, int numColors,
   return move;
 }
 
+oneMove *findBestNodeMove(Graph *g, int id,int **adjColors, int numColors, oneMove *move)
+{
+	int i,best,profit;
+	Node *n;
+	
+	best=10000;
+	n=getNodeFromList(id,g->nodesList);
+	
+// 	printf("Find best for node %d\n",id);
+	
+	for(i=0;i<numColors;i++)
+	{	//Except current color
+		if(i!=n->color)
+		{	//Save the best 1-move
+			if((profit=moveProfit(adjColors,n,i,numColors))<best)
+			{
+//         printf("%d(%d=>%d):%d\n",n->id,n->color,i,profit);
+				best=profit;
+				move->id=n->id;
+				move->color=n->color;
+				move->bestNew=i;
+			}
+		}
+	}
+	
+	return move;
+}
+
+oneMove *findRandomSA1Move(Graph *g,int **adjColors, int numColors, oneMove *move)
+{
+	int id,newColor;
+	Node *n;
+	
+	//Select random node
+	id=(rand()%(g->numNodes-1))+1;
+	//The selected node must be conflicting
+	while(!isConflicting(g,id,adjColors))
+	{
+		id=(rand()%(g->numNodes-1))+1;	
+	}
+		
+	n=getNodeFromList(id,g->nodesList);
+
+	//Select random color not equal from the current color's node
+	newColor=rand()%numColors;
+	while(newColor==n->color)
+	{
+		newColor=rand()%numColors;
+	}
+
+	move->id=id;
+	move->bestNew=newColor;
+	move->color=n->color;
+	return move;
+}
+
 /**
 Function that returns the profit given by a 1-move
  
@@ -678,7 +1847,7 @@ int moveProfit(int **adjColors, Node *n, int newColor, int numColors)
 boolean isTabu(Graph *g,int **adjColors, int id, int color, int **tabuList, int nIt, int numColors, int nC, int bestNc)
 {
   int profit;
-	int tempColor;
+// 	int tempColor;
   Node *n;
   
   if(tabuList[id-1][color] != 0)
@@ -905,3 +2074,40 @@ boolean colorAdjFree(Node *n,int color)
 
 	return TRUE;
 }
+
+int getNodeMaxOrder(Graph *g)
+{
+	int max;
+	Node *n;
+	
+	n=firstNodesList(g->nodesList);
+	max=0;
+	
+	while(!endNodesList(n,g->nodesList))
+	{
+		if(n->numAdj > max)
+		{
+			max=n->numAdj;
+		}
+		n=nextNodesList(n);
+	}
+	
+	return max;
+}
+
+void waitEnter(char *message)
+{
+	char c;
+	
+	printf("%s",message);
+	while((c=getchar())!='\n')
+	{
+		printf("%c ",c);
+	}
+}
+
+void printSeparator()
+{
+	printf("---------------------------------------------------\n");
+}
+
