@@ -36,6 +36,10 @@ void printDotOut(NodesList *l);
 
 boolean findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adjColors);
 
+void saveBestSolution(Graph *g,int numColors,int *bestSol);
+
+void loadBestSolution(Graph *g,int numColors,int *bestSol);
+
 int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float minTemp,float tempFactor, int maxItImprove, int maxItConstTemp);
 
 int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj);
@@ -50,6 +54,14 @@ int getRandomChainNode(Graph *g,int **adjColors,int nextClass,boolean *conflicti
 
 int countColorConflicting(Graph *g,int numColors,int color,boolean *conflicting,boolean *blacklist);
 
+void doVNSGrenade(Graph *g, int numColors, int **adjColors, int iVns);
+
+void grenadeUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean *newConflicting,boolean *blacklist);
+
+void doVNSFirework(Graph *g, int numColors, int **adjColors, int iVns);
+
+void fireworkUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean *newConflicting,boolean *blacklist,int newConf,boolean *preConflicting, boolean *postConflicting);
+
 void randomColor(Graph *g, int numColors);
 
 boolean *getConflictingNodes(Graph *g, int numColors, int **adjColors, boolean *conflicting);
@@ -57,6 +69,8 @@ boolean *getConflictingNodes(Graph *g, int numColors, int **adjColors, boolean *
 boolean *getOnlyNewConflictingNodes(boolean *preConflicting,boolean *postConflicting,int numNodes,boolean *conflicting);
 
 int countOnlyNewConflictingNodes(boolean *newConflicting, int numNodes);
+
+void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors);
 
 void randomConflictingColor(Graph *g, int numColors, int **adjColors);
 

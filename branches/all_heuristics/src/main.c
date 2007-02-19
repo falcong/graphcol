@@ -253,15 +253,18 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 			
 			startTime=time(NULL);
 						
-			result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+			result=findVNS(g,colors,fixLong,propLong,g->numNodes*10,&stopIt,&adjColors);
 			
 			stopTime=time(NULL);
 			execTime=stopTime-startTime;
 				
+			printVNSProcessInfo(g,verbosity,result,instFile,colors,execTime,g->numNodes*10,fixLong,propLong,stopIt);
+			
 			if(result==0)
 			{
 				printf("Find %d-coloring for the current graph with Variable Neighborhood Search\n",colors);
-				waitEnter("Press ENTER to restart the coloring with decreased number of colors... ");
+				system("aplay beep.wav");
+// 				waitEnter("Press ENTER to restart the coloring with decreased number of colors... ");
 			}
 			else
 			{
@@ -270,7 +273,6 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 				findmin=TRUE;
 			}
 			
-// 			printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
 			colors--;
 		}
 	}
@@ -281,7 +283,7 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 		randomColor(g,colors);	
 		startTime=time(NULL);
 			
-		result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+		result=findVNS(g,colors,fixLong,propLong,g->numNodes*10,&stopIt,&adjColors);
 			
 		stopTime=time(NULL);
 		execTime=stopTime-startTime;
@@ -294,8 +296,8 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 			printf("Remaining %d conflicting nodes\n\n",result);
 			findmin=TRUE;
 		}
-			
-// 		printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
+		system("aplay beep.wav");
+		printVNSProcessInfo(g,verbosity,result,instFile,colors,execTime,g->numNodes*10,fixLong,propLong,stopIt);
 	}
 }
 
@@ -450,7 +452,7 @@ void printVNSProcessInfo(Graph *g, int type, int result, char *instFile, int col
 	char solfilename[LUNGHEZZA],filename[LUNGHEZZA];
 	Node *n;
 	
-	fResults=fopen("results_tabu.txt","a");
+	fResults=fopen("results_vns.txt","a");
 	if(fResults==NULL)
 	{
 		printf("Error in opening results file\n");
@@ -488,7 +490,7 @@ void printVNSProcessInfo(Graph *g, int type, int result, char *instFile, int col
 		
 		printf("Printing %d-coloring solution for the current graph: %s(%d).sol\n",colors,filename,colors);
 		
-		sprintf(solfilename,"instances_colored_tabu/%s(%d).sol",filename,colors);
+		sprintf(solfilename,"instances_colored_vns/%s(%d).sol",filename,colors);
 		
 		fLegalColoring=fopen(solfilename,"w");
 		
