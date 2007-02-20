@@ -62,9 +62,9 @@ int main(int argc, char *argv[])
 	//Reading configuration file
   readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&maxItImprove,&startTemp,&minTemp,&tempFactor,&maxItConstTemp);
 	 
-// 	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
+	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 // 	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
-	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
+// 	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
 	
   return 0;
 }
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int verbosity, char *instFile, int nRestart)
 {
 	boolean findmin;
-	int startTime,stopTime,execTime;
+	int startTime,stopTime,execTime,i;
 	int result,stopIt,restIt,nR;
 	int **adjColors;
 	
@@ -103,6 +103,11 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 				findmin=TRUE;
 			}
 			printTabuProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt,nR);
+			
+			for(i=0;i<g->numNodes;i++)
+				free(adjColors[i]);
+			free(adjColors);
+			
 			colors--;
 		}
 	}
@@ -152,7 +157,7 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 
 void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, float minTemp, float tempFactor, int maxItImprove, int maxItConstTemp)
 {
-	int startTime,stopTime,execTime;
+	int startTime,stopTime,execTime,i;
 	int result,stopIt;
 	int **adjColors;
 	boolean findmin;
@@ -196,6 +201,11 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 			}
 			
 			printSAProcessInfo(g,verbosity,result,instFile,colors,execTime,stopIt,startTemp,minTemp,maxItImprove,maxItConstTemp,tempFactor);
+			
+			for(i=0;i<g->numNodes;i++)
+				free(adjColors[i]);
+			free(adjColors);
+			
 			colors--;
 			waitEnter("Press ENTER to restart the coloring with decreased number of colors... ");
 		}
@@ -227,7 +237,7 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 
 void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float propLong, int maxIt)
 {
-	int startTime,stopTime,execTime;
+	int startTime,stopTime,execTime,i;
 	int result,stopIt;
 	int **adjColors;
 	boolean findmin;
@@ -275,6 +285,10 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 				findmin=TRUE;
 			}
 			
+			for(i=0;i<g->numNodes;i++)
+				free(adjColors[i]);
+			free(adjColors);
+
 			colors--;
 		}
 	}

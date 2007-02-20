@@ -327,6 +327,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
   Node *n;
 
   //Build adjacency matrix & 1-move 
+	{
     tabuList = (int **) calloc(sizeof(int *),g->numNodes);
     if(tabuList == NULL)
 		{
@@ -380,6 +381,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
         adjColors[i][j]=0;
       }
     }
+	}
   
   //Init the adjacency matrix with the solution values
   buildAdjacency(g,adjColors);
@@ -449,6 +451,18 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 	
 	*adj=adjColors;
   *stopIt=nIt;
+	
+	//Deallocation
+	free(move);
+	
+	for(i=0;i<g->numNodes;i++)
+	{
+		free(tabuList[i]);
+	}
+	
+	free(tabuList);
+	free(bestSol);
+	
   return nC; // Return the current number of conflicting nodes
 }
 
@@ -617,6 +631,8 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 			currentItImprove=maxItConstTemp;
 	}
 	
+	free(move);
+	
 	*adj=adjColors;
 	*stopIt=nIt;
 	return nC;
@@ -668,6 +684,11 @@ int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int
 		printf("VNS: Shaking the solution...\n");
 		shake(g,numColors,neigh,adjColors,iVns);
 		printf("VNS: Tabu descent...\n");
+		
+		for(i=0;i<g->numNodes;i++)
+			free(adjColors[i]);
+		free(adjColors);
+		
 		result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,&adjColors);
 		printf("VNS: it%4d (BEST tabu:%d,global:%d) neigh:%d\n",iVns,result,bestResult,neigh);
 		
@@ -710,8 +731,6 @@ void shake(Graph *g,int numColors,int neigh, int **adjColors, int iVns)
 		default:randomConflictingColor(g,numColors,adjColors);
 					break;
 	}
-	
-// 	printf("\n");
 }
 
 /**
@@ -736,24 +755,28 @@ void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
 			printf("Not enough memory to allocate move!\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(preConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(postConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(newConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(blacklist == NULL)
 		{
@@ -795,7 +818,7 @@ void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
 		
 		if(id==-1)
 		{
-			return;
+			break;
 		}
 		
 		//Get best move for the current node
@@ -822,7 +845,7 @@ void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
 		nC=nodesConflicting(g->nodesList,adjColors,numColors);
 
 		if(nC==0)
-			return;
+			break;
 		
 // 		printf("\tVNS CHAIN: it %2d (%d:%d->%d) conf: %dnew /%dtotal\n",it,move->id,move->color,move->bestNew,newConf,nC);
 		printf("(it%2d,C:%3d)%3d ->%3d",it,nC,move->color,move->bestNew);
@@ -842,6 +865,7 @@ void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
 	free(postConflicting);
 	free(newConflicting);	
 	free(blacklist);
+	free(move);
 }
 
 void chainUpdate(Graph *g, int **adjColors,oneMove *move,int numColors,boolean *newConflicting,boolean *blacklist)
@@ -849,20 +873,22 @@ void chainUpdate(Graph *g, int **adjColors,oneMove *move,int numColors,boolean *
 	int newConf,id,i;
 	Node *n;
 	boolean *preConflicting,*postConflicting;
-	preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 	
 	{
+		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(preConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(postConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		for(i=0;i<g->numNodes;i++)
 		{
 			preConflicting[i]=FALSE;
@@ -880,7 +906,7 @@ void chainUpdate(Graph *g, int **adjColors,oneMove *move,int numColors,boolean *
 		
 		if(id==-1)
 		{
-			return;
+			break;
 		}
 		
 		//Find bestNodeMove
@@ -911,7 +937,7 @@ void chainUpdate(Graph *g, int **adjColors,oneMove *move,int numColors,boolean *
 	}
 
 	free(preConflicting);
-	free(postConflicting);	
+	free(postConflicting);
 }
 
 /**
@@ -1042,24 +1068,28 @@ void doVNSGrenade(Graph *g, int numColors, int **adjColors, int iVns)
 			printf("Not enough memory to allocate move!\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(preConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(postConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(newConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(blacklist == NULL)
 		{
@@ -1094,7 +1124,7 @@ void doVNSGrenade(Graph *g, int numColors, int **adjColors, int iVns)
 		
 		if(id==-1)
 		{ //There isn't available nodes
-			return;
+			break;
 		}
 		
 		//Get best move for the current node
@@ -1119,7 +1149,7 @@ void doVNSGrenade(Graph *g, int numColors, int **adjColors, int iVns)
 		nC=nodesConflicting(g->nodesList,adjColors,numColors);
 		
 		if(nC==0)
-			return;
+			break;
 		
 		printf("(it%2d,C:%3d) %3d ->%3d",it,nC,move->color,move->bestNew);
 		
@@ -1132,6 +1162,12 @@ void doVNSGrenade(Graph *g, int numColors, int **adjColors, int iVns)
 		}
 		printf("\n");
 	}
+	
+	free(preConflicting);
+	free(postConflicting);
+	free(newConflicting);	
+	free(blacklist);
+	free(move);
 }
 
 void grenadeUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean *newConflicting,boolean *blacklist)
@@ -1177,24 +1213,28 @@ void doVNSFirework(Graph *g, int numColors, int **adjColors, int iVns)
 			printf("Not enough memory to allocate move!\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(preConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(postConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(newConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(blacklist == NULL)
 		{
@@ -1228,8 +1268,8 @@ void doVNSFirework(Graph *g, int numColors, int **adjColors, int iVns)
 		
 		if(id==-1)
 		{ //There isn't available nodes
-			printf("Return NO AVAILABLE, Conflicts:%d\n",nC);
-			return;
+// 			printf("Return NO AVAILABLE, Conflicts:%d\n",nC);
+			break;
 		}
 		
 		//Get best move for the current node
@@ -1255,7 +1295,7 @@ void doVNSFirework(Graph *g, int numColors, int **adjColors, int iVns)
 		
 		if(nC==0)
 		{
-			return;
+			break;
 		}
 			
 		printf("(it%2d,C:%3d) %2d ->%2d",it,nC,move->color,move->bestNew);
@@ -1272,6 +1312,12 @@ void doVNSFirework(Graph *g, int numColors, int **adjColors, int iVns)
 			printf("\n");
 		}
 	}
+	
+	free(preConflicting);
+	free(postConflicting);
+	free(newConflicting);	
+	free(blacklist);
+	free(move);
 }
 
 void fireworkUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean *grenadesConflicting,boolean *blacklist,int newConf,boolean *preConflicting, boolean *postConflicting)
@@ -1286,6 +1332,7 @@ void fireworkUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean
 		printf("Not enough memory to allocate conflicting nodes array\n");
 		exit(EXIT_MEMORY);
 	}		
+	
 	for(i=0;i<g->numNodes;i++)
 	{
 		newConflicting[i]=FALSE;
@@ -1338,6 +1385,8 @@ void fireworkUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean
 			printf("\n");
 		}
 	}
+
+	free(newConflicting);
 }
 
 /**
@@ -1360,24 +1409,28 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 			printf("Not enough memory to allocate move!\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		preConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(preConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		postConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(postConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		newConflicting=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(newConflicting == NULL)
 		{
 			printf("Not enough memory to allocate conflicting nodes array\n");
 			exit(EXIT_MEMORY);
 		}
+		
 		blacklist=(boolean *)calloc(sizeof(boolean),g->numNodes);
 		if(blacklist == NULL)
 		{
@@ -1475,6 +1528,11 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 	}
 // 	printAdjacency(adjColors,g,numColors);
 	
+	free(preConflicting);
+	free(postConflicting);
+	free(newConflicting);	
+	free(blacklist);
+	free(move);
 }
 
 /**
