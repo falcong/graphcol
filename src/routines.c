@@ -837,6 +837,11 @@ void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
 		
 		printf("\n");
 	}
+	
+	free(preConflicting);
+	free(postConflicting);
+	free(newConflicting);	
+	free(blacklist);
 }
 
 void chainUpdate(Graph *g, int **adjColors,oneMove *move,int numColors,boolean *newConflicting,boolean *blacklist)
@@ -904,6 +909,9 @@ void chainUpdate(Graph *g, int **adjColors,oneMove *move,int numColors,boolean *
 		printf("->%3d ",move->bestNew);
 		newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
 	}
+
+	free(preConflicting);
+	free(postConflicting);	
 }
 
 /**
