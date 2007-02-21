@@ -590,13 +590,12 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 			else
 			{	
 				//Uphill move
-				dice=fmod(drand48(),2);	
+				dice=(double)rand()/RAND_MAX;	
 				exponent=profit/currentTemp;
 				
 				if(dice<exp(exponent))
 				{
-					printf("- It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.2f<:%.2f(T:%.2f)\tOk \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit,dice,exp(exponent),currentTemp);
-					
+					printf("- It%7d(%2d/%d) (c:%4d): Node %4d (%3d=>%3d) Profit:%3d%3d=%3d\t%.5f<:%.2f(T:%.2f)\tOk \n",nIt,nItNotChange,currentItImprove,nC,move->id,move->color,move->bestNew,currentNc,-nC,profit,dice,exp(exponent),currentTemp);
 				}
 				else
 				{
@@ -744,7 +743,7 @@ void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
 {
 	int i,id,stopIt,maxIt,delta,it,newConf,nextClass,nC;
 	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
-	float d;
+	double d;
 	oneMove *move;
 	Node *n;
 	
@@ -1057,7 +1056,7 @@ void doVNSGrenade(Graph *g, int numColors, int **adjColors, int iVns)
 {
 	int i,id,stopIt,maxIt,delta,it,newConf,nextClass,nC;
 	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
-	float d;
+	double d;
 	oneMove *move;
 	Node *n;
 	
@@ -1202,7 +1201,7 @@ void doVNSFirework(Graph *g, int numColors, int **adjColors, int iVns)
 {
 	int i,id,stopIt,maxIt,delta,it,newConf,nC;
 	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
-	float d;
+	double d;
 	oneMove *move;
 	Node *n;
 	
