@@ -62,9 +62,9 @@ int main(int argc, char *argv[])
 	//Reading configuration file
   readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&maxItImprove,&startTemp,&minTemp,&tempFactor,&maxItConstTemp);
 	 
-	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
+//	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 // 	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
-//  	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
+  	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
 	
   return 0;
 }
@@ -299,7 +299,8 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 		randomColor(g,colors);	
 		startTime=time(NULL);
 			
-		result=findVNS(g,colors,fixLong,propLong,g->numNodes*10,&stopIt,&adjColors);
+		
+result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
 			
 		stopTime=time(NULL);
 		execTime=stopTime-startTime;
