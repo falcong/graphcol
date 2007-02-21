@@ -433,7 +433,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 			exit(EXIT_INCONSISTENCY);
 		}
 				
-// 		printf("It%d/%d\t(conf:%d,best:%d):\tNode\t%d(%d=>%d)\tsetTabu(%d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
+// 		printf("It%d/%d\t(conf:%3d,best:%3d): Node %3d(%3d=>%3d) setTabu(%3d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
 //   printAdjacency(adjColors,g,numColors);
@@ -463,6 +463,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 	free(tabuList);
 	free(bestSol);
 	
+// 	return bestNc;
   return nC; // Return the current number of conflicting nodes
 }
 
@@ -712,7 +713,7 @@ int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int
 	
 	
 	*adj=adjColors;
-	return result;
+	return bestResult;
 }
 
 void shake(Graph *g,int numColors,int neigh, int **adjColors, int iVns)

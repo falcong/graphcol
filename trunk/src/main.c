@@ -244,12 +244,14 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 	
 	adjColors=NULL;
 	
+	maxIt=g->numNodes*10;
+	
 	printSeparator();
 	printf("VNS parameters:\nTabu fixed length:\t%d\n",fixLong);
 	printf("Tabu proportional length:\t%.2f\n",propLong);
-	printf("Max It:\t%d\n",g->numNodes*10);
+	printf("Max It:\t%d\n",maxIt);
 	printSeparator();
-	
+		
 	if(colors==-1)
 	{
 		colors=greedyColor(g);
@@ -265,12 +267,12 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 			
 			startTime=time(NULL);
 						
-			result=findVNS(g,colors,fixLong,propLong,g->numNodes*10,&stopIt,&adjColors);
+			result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
 			
 			stopTime=time(NULL);
 			execTime=stopTime-startTime;
 				
-			printVNSProcessInfo(g,verbosity,result,instFile,colors,execTime,g->numNodes*10,fixLong,propLong,stopIt);
+			printVNSProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt);
 			
 			if(result==0)
 			{
@@ -300,21 +302,24 @@ void doVNS(int colors,Graph *g,int verbosity, char *instFile, int fixLong, float
 		startTime=time(NULL);
 			
 		
-result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+		result=findVNS(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
 			
 		stopTime=time(NULL);
 		execTime=stopTime-startTime;
 				
 		if(result==0)
+		{
 			printf("Find %d-coloring for the current graph with Variable Neighborhood Search\n",colors);
+			system("aplay beep.wav");
+		}
 		else
 		{
 			printf("\nFailed to find %d-coloring for the current graph with Variable Neighborhood Search\n",colors);
 			printf("Remaining %d conflicting nodes\n\n",result);
 			findmin=TRUE;
 		}
-		system("aplay beep.wav");
-		printVNSProcessInfo(g,verbosity,result,instFile,colors,execTime,g->numNodes*10,fixLong,propLong,stopIt);
+
+		printVNSProcessInfo(g,verbosity,result,instFile,colors,execTime,maxIt,fixLong,propLong,stopIt);
 	}
 }
 
