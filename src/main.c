@@ -18,12 +18,12 @@ void printVNSProcessInfo(Graph *g, int type, int result, char *instFile, int col
 
 int main(int argc, char *argv[])
 {
-  char instFile[LUNGHEZZA+1];
-  Graph *g;
-  int colors,verbosity;
-  //Tabu search param
+	char instFile[LUNGHEZZA+1];
+	Graph *g;
+	int colors,verbosity;
+	//Tabu search param
 	int fixLong,maxIt,nRestart;
-  float propLong;
+	float propLong;
 	//Simulated Annealing param
 	int maxItImprove,maxItConstTemp;
 	float startTemp,minTemp,tempFactor;	
@@ -31,10 +31,10 @@ int main(int argc, char *argv[])
 	printSeparator();
 	srand((unsigned int)time(NULL));
 	//Reading instance file
-  readCommand(argc,argv,instFile,&colors,&verbosity);
-  //Loading instance file & building graph struct
-  g=loadGraph(instFile);
-  
+	readCommand(argc,argv,instFile,&colors,&verbosity);
+	//Loading instance file & building graph struct
+	g=loadGraph(instFile);
+
 	if(colors==-1)
 	{
 		printf("Colors:\tNot chosen (Find upperbound solution)\n\n");
@@ -45,9 +45,9 @@ int main(int argc, char *argv[])
 	}
 	
 	//Set default tabu search values
-  maxIt=1000;
-  fixLong=g->numNodes/2;
-  propLong=0.5;
+	maxIt=1000;
+	fixLong=g->numNodes/2;
+	propLong=0.5;
 	nRestart=0;
 	
 	srand((unsigned int)time(NULL));
@@ -60,11 +60,11 @@ int main(int argc, char *argv[])
 	maxItConstTemp=100;
 	
 	//Reading configuration file
-  readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&maxItImprove,&startTemp,&minTemp,&tempFactor,&maxItConstTemp);
-	 
-//	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
+	readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&maxItImprove,&startTemp,&minTemp,&tempFactor,&maxItConstTemp);
+
+// 	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
 // 	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
-  	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
+	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
 	
   return 0;
 }
@@ -114,7 +114,7 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 	else
 	{
 		//Number of colors chosen
-  	//Build the random initial solution
+		//Build the random initial solution
 		randomColor(g,colors);
 
 		startTime=time(NULL);
@@ -175,7 +175,7 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 	{
 		colors=greedyColor(g);
 		
-  	printf("Greedy upperbound colors:\t%d\n",colors);
+		printf("Greedy upperbound colors:\t%d\n",colors);
 		waitEnter("Press ENTER to start the computation... ");
 
 		findmin=FALSE;
@@ -330,33 +330,33 @@ void printTabuProcessInfo(Graph *g, int type, int result, char *instFile, int co
 	char solfilename[LUNGHEZZA],filename[LUNGHEZZA];
 	Node *n;
 	
-  fResults=fopen("results_tabu.txt","a");
+	fResults=fopen("results_tabu.txt","a");
 	if(fResults==NULL)
 	{
 		printf("Error in opening results file\n");
 		exit(EXIT_OPENFILE);
 	}
 	
-  fprintf(fResults,"\n%s\t%d\t%d\t%d\t",instFile,g->numNodes,g->numEdges,colors);
-  if(result==0)
-    fprintf(fResults,"COLORED(C:%d)\t",result);
-  else
-    fprintf(fResults,"FAILED(C:%d)\t",result);
+	fprintf(fResults,"\n%s\t%d\t%d\t%d\t",instFile,g->numNodes,g->numEdges,colors);
+	if(result==0)
+		fprintf(fResults,"COLORED(C:%d)\t",result);
+	else
+		fprintf(fResults,"FAILED(C:%d)\t",result);
+
+	fprintf(fResults,"%d\t%d\t%d\t%d\t%.2f\t%d",execTime,stopIt,maxIt,fixLong,propLong,nRestart);
+	fclose(fResults);
   
-  fprintf(fResults,"%d\t%d\t%d\t%d\t%.2f\t%d",execTime,stopIt,maxIt,fixLong,propLong,nRestart);
-  fclose(fResults);
-  
-  switch(type)
-  {
+	switch(type)
+	{
 		case 1: printf("Printing graph image\n");
-						printDotOut(g->nodesList);
-            system("dot out.dot -Tpng > out.png");
-            break;
-    case 2: printf("Printing adjacency list\n");
-						printNodesList(g->nodesList);
-            break;
-    default:break;
-  }
+			printDotOut(g->nodesList);
+			system("dot out.dot -Tpng > out.png");
+			break;
+		case 2: printf("Printing adjacency list\n");
+			printNodesList(g->nodesList);
+			break;
+		default:break;
+	}
 	
 	if(result==0)
 	{
@@ -421,12 +421,12 @@ void printSAProcessInfo(Graph *g,int type,int result,char *instFile,int colors,i
 	switch(type)
 	{
 		case 1: printf("Printing graph image\n");
-		printDotOut(g->nodesList);
-		system("dot out.dot -Tpng > out.png");
-		break;
+			printDotOut(g->nodesList);
+			system("dot out.dot -Tpng > out.png");
+			break;
 		case 2: printf("Printing adjacency list\n");
-		printNodesList(g->nodesList);
-		break;
+			printNodesList(g->nodesList);
+			break;
 		default:break;
 	}
 	
@@ -493,12 +493,12 @@ void printVNSProcessInfo(Graph *g, int type, int result, char *instFile, int col
 	switch(type)
 	{
 		case 1: printf("Printing graph image\n");
-		printDotOut(g->nodesList);
-		system("dot out.dot -Tpng > out.png");
-		break;
+			printDotOut(g->nodesList);
+			system("dot out.dot -Tpng > out.png");
+			break;
 		case 2: printf("Printing adjacency list\n");
-		printNodesList(g->nodesList);
-		break;
+			printNodesList(g->nodesList);
+			break;
 		default:break;
 	}
 	
