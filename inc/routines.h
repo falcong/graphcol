@@ -74,7 +74,7 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors);
 
 void randomConflictingColor(Graph *g, int numColors, int **adjColors);
 
-void buildAdjacency(Graph *g,int **adjColors);
+void buildAdjacency(Graph *g,int **adjColors,int numColors);
 
 void printAdjacency(int **adjColors,Graph *g,int numColors);
 

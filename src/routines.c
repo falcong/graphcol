@@ -384,7 +384,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 	}
   
   //Init the adjacency matrix with the solution values
-  buildAdjacency(g,adjColors);
+  buildAdjacency(g,adjColors,numColors);
 	
 // 	printAdjacency(adjColors,g,numColors);
 
@@ -438,15 +438,11 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
   
 //   printAdjacency(adjColors,g,numColors);
 	
-	for(i=0;i<g->numNodes;i++)
-		for(j=0;j<numColors;j++)
-			adjColors[i][j]=0;
-	
 	loadBestSolution(g,numColors,bestSol);
-	buildAdjacency(g,adjColors);
+	buildAdjacency(g,adjColors,numColors);
 	nC=nodesConflicting(g->nodesList,adjColors,numColors);
-// 	printf("Loaded best solution: c%d\n",nC);
-	
+	printf("Loaded best solution: c%d\n",nC);
+		
 // 	printAdjacency(adjColors,g,numColors);
 	
 	*adj=adjColors;
@@ -538,7 +534,7 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 	}
 	
 	//Init the adjacency matrix with the solution values
-	buildAdjacency(g,adjColors);
+	buildAdjacency(g,adjColors,numColors);
 	
 	nC=nodesConflicting(g->nodesList,adjColors,numColors);
 	printf("Number of conflicting nodes:%d\n",nC);
@@ -638,10 +634,14 @@ int findSA(Graph *g,int numColors,int *stopIt,int ***adj, float startTemp, float
 	return nC;
 }
 
+//Da testare il salvataggio della soluzione migliore prima di muoversi:
+//-Se dopo la discesa locale la soluzione raggiunta è migliore dell'ottima allora ci si muove
+//-Se dopo la discesa locale la soluzione raggiunta è peggiore allora non ci si muove
 int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
 {
 	int result,neigh,i,j,nC,iVns,bestResult;
 	int **adjColors;
+	int *bestSol;
 	
 	neigh=0;
 	iVns=0;
@@ -670,13 +670,21 @@ int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int
 				adjColors[i][j]=0;
 			}
 		}
+		
+		bestSol=(int *)calloc(sizeof(int),g->numNodes);
+		if(bestSol == NULL)
+		{
+			printf("Not enough memory to allocate best solution array\n");
+			exit(EXIT_MEMORY);
+		}
 	}
 	
-	buildAdjacency(g,adjColors);
+	buildAdjacency(g,adjColors,numColors);
 	
 	nC=nodesConflicting(g->nodesList,adjColors,numColors);
 	result=nC;
 	bestResult=result;
+	saveBestSolution(g,numColors,bestSol);
 	printf("Number of conflicting nodes:%d\n",nC);
 	
 	while(result>0 && iVns < g->numNodes)
@@ -698,9 +706,17 @@ int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int
 			bestResult=result;
 			iVns=0;
 			neigh=0;
+			saveBestSolution(g,numColors,bestSol);
 		}
 		else
 		{
+// 			if(result>bestResult)
+			{
+				loadBestSolution(g,numColors,bestSol);
+				buildAdjacency(g,adjColors,numColors);
+				nC=nodesConflicting(g->nodesList,adjColors,numColors);
+				printf("Number of conflicting nodes:%d\n",nC);
+			}
 // 			printf("\t%d/5 = %d -> %d mod %d = %d",g->numNodes,g->numNodes/5,iVns,g->numNodes/5,iVns%((g->numNodes/5)));
 			if(iVns%((g->numNodes/5))==0)
 			{
@@ -711,7 +727,7 @@ int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int
 		iVns++;
 	}
 	
-	
+	free(bestSol);
 	*adj=adjColors;
 	return bestResult;
 }
@@ -729,6 +745,7 @@ void shake(Graph *g,int numColors,int neigh, int **adjColors, int iVns)
 		case 3:doVNSEmptyRefill(g,numColors,adjColors);
 					break;
 		default:randomConflictingColor(g,numColors,adjColors);
+						doVNSEmptyRefill(g,numColors,adjColors);
 					break;
 	}
 }
@@ -848,7 +865,7 @@ void doVNSChain(Graph *g, int numColors, int **adjColors, int iVns)
 			break;
 		
 // 		printf("\tVNS CHAIN: it %2d (%d:%d->%d) conf: %dnew /%dtotal\n",it,move->id,move->color,move->bestNew,newConf,nC);
-		printf("(it%2d,C:%3d)%3d ->%3d",it,nC,move->color,move->bestNew);
+		printf("(it%2d,C:%3d,%3dnew)%3d ->%3d",it,nC,newConf,move->color,move->bestNew);
 		
 		if(newConf>0)
 		{
@@ -1629,11 +1646,18 @@ void randomConflictingColor(Graph *g, int numColors, int **adjColors)
 /**
 Build the adjacency matrix from the Graph starting status
 */
-void buildAdjacency(Graph *g,int **adjColors)
+void buildAdjacency(Graph *g,int **adjColors,int numColors)
 {
+	int i,j;
   Node *n;
   pNode *pn;
   
+	
+	for(i=0;i<g->numNodes;i++)
+		for(j=0;j<numColors;j++)
+			adjColors[i][j]=0;
+	
+	
   n=firstNodesList(g->nodesList);
   
 	//For each node
