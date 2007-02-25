@@ -176,7 +176,7 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 		colors=greedyColor(g);
 		
 		printf("Greedy upperbound colors:\t%d\n",colors);
-		waitEnter("Press ENTER to start the computation... ");
+		//waitEnter("Press ENTER to start the computation... ");
 
 		findmin=FALSE;
 		while(!findmin)
@@ -207,12 +207,12 @@ void doSA(int colors, Graph *g, int verbosity, char *instFile, float startTemp, 
 			free(adjColors);
 			
 			colors--;
-			waitEnter("Press ENTER to restart the coloring with decreased number of colors... ");
+			//waitEnter("Press ENTER to restart the coloring with decreased number of colors... ");
 		}
 	}
 	else
 	{
-		waitEnter("Press ENTER to start the computation... ");
+		//waitEnter("Press ENTER to start the computation... ");
 		//Build the random initial solution
 		randomColor(g,colors);	
 		startTime=time(NULL);
