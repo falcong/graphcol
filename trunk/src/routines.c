@@ -317,7 +317,7 @@ void printDotOut(NodesList *l)
 /**
 Function that perform the tabu search on given Graph with given number of colors
 */
-int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj)
+int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj, boolean returnBest)
 {
   int **tabuList;
   int **adjColors;
@@ -438,12 +438,13 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
   
 //   printAdjacency(adjColors,g,numColors);
 	
-	loadBestSolution(g,numColors,bestSol);
-	buildAdjacency(g,adjColors,numColors);
-	nC=nodesConflicting(g->nodesList,adjColors,numColors);
-	printf("Loaded best solution: c%d\n",nC);
-		
-// 	printAdjacency(adjColors,g,numColors);
+	if(returnBest==TRUE)
+	{
+		loadBestSolution(g,numColors,bestSol);
+		buildAdjacency(g,adjColors,numColors);
+		nC=nodesConflicting(g->nodesList,adjColors,numColors);
+// 		printf("Loaded best solution: c%d\n",nC);
+	}
 	
 	*adj=adjColors;
   *stopIt=nIt;
@@ -697,7 +698,7 @@ int findVNS(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int
 			free(adjColors[i]);
 		free(adjColors);
 		
-		result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,&adjColors);
+		result=findTabu(g,numColors,fixLong,propLong,maxIt,stopIt,&adjColors,TRUE);
 		printf("VNS: it%4d (BEST tabu:%d,global:%d) neigh:%d\n",iVns,result,bestResult,neigh);
 		
 		if(result<bestResult)
@@ -1414,7 +1415,7 @@ void fireworkUpdate(Graph *g,int **adjColors,oneMove *move,int numColors,boolean
 */
 void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 {
-	int nC,i,maxColor,maxConflict,cC,newConf;
+	int nC,i,maxColor,maxConflict,cC,newConf,j,jmax;
 	boolean *preConflicting,*postConflicting,*newConflicting,*blacklist;
 	Node *n;
 	oneMove *move;
@@ -1484,13 +1485,14 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 	
 // 	printf("VNS EMPTY-REFILL: Color class %d with largest number of conflicting nodes: %d\n",maxColor,maxConflict);
 // 	printAdjacency(adjColors,g,numColors);
-	
+	jmax=0;
 	//Empty the color class
 	n=firstNodesList(g->nodesList);
 	while(!endNodesList(n,g->nodesList))
 	{		
 		if(n->color==maxColor)
 		{
+			jmax++;
 			//Get best move for the current node
 			move=findBestNodeMove(g,n->id,adjColors,numColors,move);
 	
@@ -1509,7 +1511,7 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 		n=nextNodesList(n);
 	}
 	
-// 	printf("VNS: EMPTY-REFILL: Emptying Color class %d (%d->0)\n",maxColor,maxConflict);
+	printf("VNS: EMPTY-REFILL: Emptying Color class %d (%d->0), Moved %d nodes\n",maxColor,maxConflict,jmax);
 // 	printAdjacency(adjColors,g,numColors);
 	
 	postConflicting=getConflictingNodes(g,numColors,adjColors,postConflicting);
@@ -1517,6 +1519,7 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 	newConflicting=getOnlyNewConflictingNodes(preConflicting,postConflicting,g->numNodes,newConflicting);
 	newConf=countOnlyNewConflictingNodes(newConflicting,g->numNodes);
 
+	j=0;
 	if(newConf>0)
 	{
 		printf("VNS: EMPTY-REFILL: New conflicts: %2d->%2d emptying class %d\n",maxConflict,newConf,maxColor);
@@ -1525,13 +1528,14 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 		{
 			if(newConflicting[i]==TRUE)
 			{
+				j++;
 				move=findBestNodeMove(g,i+1,adjColors,numColors,move);
 			
 			  //Do the move
 				n=getNodeFromList(i+1,g->nodesList);
 				n->color=move->bestNew;
 			
-				printf("n:%2d updating (%2d ->%2d)\n",move->id,move->color,move->bestNew);
+				printf("n %d:%2d updating (%2d ->%2d)\n",j,move->id,move->color,move->bestNew);
 		
 			  //Update the adjacency matrix
 				updateAdjacency(g,adjColors,move,numColors);
@@ -1540,6 +1544,9 @@ void doVNSEmptyRefill(Graph *g, int numColors, int **adjColors)
 
 				if(nC==0)
 					return;
+				
+				if(j==jmax)
+					break;
 			}
 		}
 	}

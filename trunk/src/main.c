@@ -90,7 +90,7 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 			//Build the random initial solution
 			randomColor(g,colors);
 			startTime=time(NULL);
-			result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+			result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors,TRUE);
 			stopTime=time(NULL);
 			execTime=stopTime-startTime;
 			
@@ -118,7 +118,7 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 		randomColor(g,colors);
 
 		startTime=time(NULL);
-		result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+		result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors,FALSE);
 		restIt=stopIt;
   
 		if(result==0)
@@ -132,7 +132,7 @@ void doTabu(int colors,Graph *g, int fixLong, float propLong, int maxIt, int ver
 			{
 				nR++;
 				randomConflictingColor(g,colors,adjColors);
-				result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors);
+				result=findTabu(g,colors,fixLong,propLong,maxIt,&stopIt,&adjColors,FALSE);
 				restIt+=stopIt;
 				
 				if(result==0)
