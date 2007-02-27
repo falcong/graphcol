@@ -34,7 +34,7 @@ Function that print in a "out.dot" file the resulting graph of the computation
 void printDotOut(NodesList *l);
 
 
-int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adjColors);
+int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, int *stopIt, int ***adj, boolean returnBest);
 
 void saveBestSolution(Graph *g,int numColors,int *bestSol);
 
