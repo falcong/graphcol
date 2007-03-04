@@ -63,8 +63,8 @@ int main(int argc, char *argv[])
 	readConfFile(&nRestart,&maxIt,&fixLong,&propLong,&maxItImprove,&startTemp,&minTemp,&tempFactor,&maxItConstTemp);
 
 // 	doSA(colors,g,verbosity,instFile,startTemp,minTemp,tempFactor,maxItImprove,maxItConstTemp);
-// 	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
-	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
+	doTabu(colors,g,fixLong,propLong,maxIt,verbosity,instFile,nRestart);
+// 	doVNS(colors,g,verbosity,instFile,fixLong,propLong,maxIt);
 	
   return 0;
 }

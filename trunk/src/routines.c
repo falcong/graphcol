@@ -433,7 +433,7 @@ int findTabu(Graph *g, int numColors, int fixLong, float propLong, int maxIt, in
 			exit(EXIT_INCONSISTENCY);
 		}
 				
-// 		printf("It%d/%d\t(conf:%3d,best:%3d): Node %3d(%3d=>%3d) setTabu(%3d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
+		printf("It%d/%d\t(conf:%3d,best:%3d): Node %3d(%3d=>%3d) setTabu(%3d it)\n",nIt,endIt,nC,bestNc,move->id,move->color,move->bestNew,tabuT-nIt);
   }
   
 //   printAdjacency(adjColors,g,numColors);
