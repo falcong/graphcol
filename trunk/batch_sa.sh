@@ -1,45 +1,7 @@
 #!/bin/bash
 
-./color instances/DSJC250.5.col 29
-./color instances/DSJC250.5.col 28
-./color instances/DSJC250.5.col 27
-./color instances/DSJC500.5.col 55
-./color instances/DSJC500.5.col 54
-./color instances/DSJC500.5.col 53
-./color instances/DSJC1000.5.col 105
-./color instances/DSJC1000.5.col 104
-./color instances/DSJC1000.5.col 103
-./color instances/flat1000_76_0.col 103
-./color instances/flat1000_76_0.col 102
-./color instances/flat1000_76_0.col 101
-./color instances/flat300_28_0.col 33
-./color instances/flat300_28_0.col 32
-./color instances/flat300_28_0.col 31
-./color instances/le450_15c.col 22
-./color instances/le450_15c.col 21
-./color instances/le450_15c.col 20
-./color instances/le450_25c.col 28
-./color instances/le450_25c.col 27
-./color instances/le450_25c.col 26
+./color instances/DSJC500.5.col 56
+./color instances/le450_15c.col
+./color instances/le450_25c.col
+./color instances/DSJC500.5.col 56
 
-./color instances/DSJC250.5.col 29
-./color instances/DSJC250.5.col 28
-./color instances/DSJC250.5.col 27
-./color instances/DSJC500.5.col 55
-./color instances/DSJC500.5.col 54
-./color instances/DSJC500.5.col 53
-./color instances/DSJC1000.5.col 105
-./color instances/DSJC1000.5.col 104
-./color instances/DSJC1000.5.col 103
-./color instances/flat1000_76_0.col 103
-./color instances/flat1000_76_0.col 102
-./color instances/flat1000_76_0.col 101
-./color instances/flat300_28_0.col 33
-./color instances/flat300_28_0.col 32
-./color instances/flat300_28_0.col 31
-./color instances/le450_15c.col 22
-./color instances/le450_15c.col 21
-./color instances/le450_15c.col 20
-./color instances/le450_25c.col 28
-./color instances/le450_25c.col 27
-./color instances/le450_25c.col 26
